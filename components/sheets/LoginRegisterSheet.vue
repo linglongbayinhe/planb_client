@@ -1,0 +1,370 @@
+<template>
+	<view class="sheet-overlay" @click.self="onClose">
+		<view class="sheet-container">
+			<view class="drag-handle"></view>
+
+			<!-- 导航栏 -->
+			<view class="sheet-nav">
+				<view class="nav-btn" @click="onClose">
+					<text class="nav-cancel">取消</text>
+				</view>
+				<text class="sheet-title">{{ mode === 'login' ? '登录' : '注册' }}</text>
+				<view style="min-width: 44px;"></view>
+			</view>
+
+			<scroll-view class="sheet-scroll" scroll-y>
+				<!-- 模式切换 -->
+				<view class="mode-switcher card">
+					<view
+						class="mode-tab"
+						:class="{ 'mode-tab-active': mode === 'login' }"
+						@click="mode = 'login'; clearError()"
+					>
+						<text class="mode-tab-text">登录</text>
+					</view>
+					<view
+						class="mode-tab"
+						:class="{ 'mode-tab-active': mode === 'register' }"
+						@click="mode = 'register'; clearError()"
+					>
+						<text class="mode-tab-text">注册</text>
+					</view>
+				</view>
+
+				<!-- 错误提示 -->
+				<view v-if="errorMsg" class="error-banner">
+					<text class="error-text">{{ errorMsg }}</text>
+				</view>
+
+				<!-- 表单 -->
+				<view class="form-card card">
+					<view class="form-row">
+						<text class="form-label">邮箱</text>
+						<input
+							class="form-input"
+							v-model="email"
+							type="email"
+							placeholder="输入邮箱..."
+							placeholder-class="form-placeholder"
+						/>
+					</view>
+					<view class="form-divider"></view>
+					<view class="form-row">
+						<text class="form-label">密码</text>
+						<input
+							class="form-input"
+							v-model="password"
+							type="password"
+							placeholder="输入密码..."
+							placeholder-class="form-placeholder"
+						/>
+					</view>
+
+					<template v-if="mode === 'register'">
+						<view class="form-divider"></view>
+						<view class="form-row">
+							<text class="form-label">确认密码</text>
+							<input
+								class="form-input"
+								v-model="confirmPassword"
+								type="password"
+								placeholder="再次输入..."
+								placeholder-class="form-placeholder"
+							/>
+						</view>
+						<view class="form-divider"></view>
+						<view class="form-row">
+							<text class="form-label">昵称</text>
+							<input
+								class="form-input"
+								v-model="nickname"
+								placeholder="选填..."
+								placeholder-class="form-placeholder"
+							/>
+						</view>
+					</template>
+				</view>
+
+				<!-- 提交按钮 -->
+				<view class="submit-btn-wrap">
+					<view
+						class="submit-btn"
+						:class="{ 'submit-btn-disabled': !canSubmit }"
+						@click="onSubmit"
+					>
+						<text class="submit-btn-text">{{ mode === 'login' ? '登录' : '注册' }}</text>
+					</view>
+				</view>
+
+				<!-- 底部说明 -->
+				<text class="bottom-note">当前为本地账户，数据仅保存在本设备。</text>
+
+				<view style="height: 40px;"></view>
+			</scroll-view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import { store, mutations } from '../../store/index.js'
+
+	export default {
+		name: 'LoginRegisterSheet',
+		emits: ['close'],
+		data() {
+			return {
+				mode: 'login',
+				email: '',
+				password: '',
+				confirmPassword: '',
+				nickname: '',
+				errorMsg: ''
+			}
+		},
+		computed: {
+			canSubmit() {
+				if (!this.email.trim() || !this.password.trim()) return false
+				if (this.mode === 'register') {
+					return this.password.length >= 6 && this.password === this.confirmPassword
+				}
+				return true
+			}
+		},
+		methods: {
+			onClose() {
+				this.$emit('close')
+			},
+			clearError() {
+				this.errorMsg = ''
+			},
+			isValidEmail(email) {
+				return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+			},
+			onSubmit() {
+				if (!this.canSubmit) return
+				this.errorMsg = ''
+
+				if (!this.isValidEmail(this.email)) {
+					this.errorMsg = '邮箱格式无效'
+					return
+				}
+
+				if (this.mode === 'login') {
+					const users = this.getStoredUsers()
+					const user = users.find(u => u.email === this.email)
+					if (!user) {
+						this.errorMsg = '该邮箱尚未注册'
+						return
+					}
+					if (user.password !== this.password) {
+						this.errorMsg = '密码不正确'
+						return
+					}
+					mutations.setUser({ email: user.email, nickname: user.nickname })
+					this.$emit('close')
+				} else {
+					if (this.password.length < 6) {
+						this.errorMsg = '密码至少需要6位'
+						return
+					}
+					if (this.password !== this.confirmPassword) {
+						this.errorMsg = '两次密码不一致'
+						return
+					}
+					const users = this.getStoredUsers()
+					if (users.find(u => u.email === this.email)) {
+						this.errorMsg = '该邮箱已注册'
+						return
+					}
+					const newUser = {
+						email: this.email,
+						password: this.password,
+						nickname: this.nickname
+					}
+					users.push(newUser)
+					try {
+						uni.setStorageSync('users', JSON.stringify(users))
+					} catch (e) {}
+					mutations.setUser({ email: newUser.email, nickname: newUser.nickname })
+					this.$emit('close')
+				}
+			},
+			getStoredUsers() {
+				try {
+					const v = uni.getStorageSync('users')
+					return v ? JSON.parse(v) : []
+				} catch (e) {
+					return []
+				}
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	.sheet-overlay {
+		position: fixed;
+		top: 0; left: 0; right: 0; bottom: 0;
+		background-color: rgba(0, 0, 0, 0.4);
+		z-index: 1000;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+	}
+
+	.sheet-container {
+		background-color: #F2F2F7;
+		border-radius: 16px 16px 0 0;
+		max-height: 85vh;
+		display: flex;
+		flex-direction: column;
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+	}
+
+	.drag-handle {
+		width: 36px; height: 5px;
+		background-color: #C7C7CC;
+		border-radius: 3px;
+		margin: 10px auto 4px;
+	}
+
+	.sheet-nav {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 8px 16px 12px;
+	}
+
+	.sheet-title {
+		font-size: 17px;
+		font-weight: 600;
+		color: #1C1C1E;
+	}
+
+	.nav-btn { min-width: 44px; }
+
+	.nav-cancel {
+		font-size: 17px;
+		color: #8E8E93;
+		background-color: #E5E5EA;
+		padding: 6px 14px;
+		border-radius: 20px;
+	}
+
+	.sheet-scroll { flex: 1; }
+
+	.mode-switcher {
+		margin: 0 16px 16px;
+		background: #FFFFFF;
+		border-radius: 12px;
+		display: flex;
+		flex-direction: row;
+		overflow: hidden;
+	}
+
+	.mode-tab {
+		flex: 1;
+		height: 42px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #F2F2F7;
+	}
+
+	.mode-tab-active {
+		background-color: #FFFFFF;
+		border-bottom: 2px solid #007AFF;
+	}
+
+	.mode-tab-text {
+		font-size: 16px;
+		font-weight: 500;
+		color: #8E8E93;
+	}
+
+	.mode-tab-active .mode-tab-text {
+		color: #1C1C1E;
+	}
+
+	.error-banner {
+		margin: 0 16px 12px;
+		background-color: #FFE5E5;
+		border-radius: 10px;
+		padding: 10px 14px;
+	}
+
+	.error-text {
+		font-size: 14px;
+		color: #C0392B;
+	}
+
+	.form-card {
+		margin: 0 16px 16px;
+		background: #FFFFFF;
+		border-radius: 12px;
+		overflow: hidden;
+	}
+
+	.form-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 14px 16px;
+		gap: 12px;
+	}
+
+	.form-label {
+		font-size: 16px;
+		color: #1C1C1E;
+		min-width: 70px;
+	}
+
+	.form-input {
+		flex: 1;
+		font-size: 15px;
+		color: #1C1C1E;
+		background: transparent;
+		border: none;
+		outline: none;
+	}
+
+	.form-placeholder { color: #C7C7CC; }
+
+	.form-divider {
+		height: 0.5px;
+		background-color: #E5E5EA;
+		margin: 0 16px;
+	}
+
+	.submit-btn-wrap {
+		padding: 0 16px 12px;
+	}
+
+	.submit-btn {
+		width: 100%;
+		height: 52px;
+		background-color: #007AFF;
+		border-radius: 14px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.submit-btn-disabled {
+		opacity: 0.5;
+	}
+
+	.submit-btn-text {
+		font-size: 17px;
+		font-weight: 600;
+		color: #FFFFFF;
+	}
+
+	.bottom-note {
+		font-size: 13px;
+		color: #8E8E93;
+		text-align: center;
+		padding: 4px 20px;
+	}
+</style>

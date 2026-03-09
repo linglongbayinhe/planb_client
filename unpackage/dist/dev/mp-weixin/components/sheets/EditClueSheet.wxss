@@ -1,0 +1,123 @@
+
+.sheet-overlay.data-v-dd9903cc {
+		position: fixed;
+		top: 0; left: 0; right: 0; bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		z-index: 1100;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+}
+.sheet-container.data-v-dd9903cc {
+		background-color: #F2F2F7;
+		border-radius: 16px 16px 0 0;
+		max-height: 90vh;
+		display: flex;
+		flex-direction: column;
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.drag-handle.data-v-dd9903cc {
+		width: 36px;
+		height: 5px;
+		background-color: #C7C7CC;
+		border-radius: 3px;
+		margin: 10px auto 4px;
+}
+.sheet-nav.data-v-dd9903cc {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 8px 16px 12px;
+}
+.sheet-title.data-v-dd9903cc {
+		font-size: 17px;
+		font-weight: 600;
+		color: #1C1C1E;
+}
+.nav-btn.data-v-dd9903cc { min-width: 44px;
+}
+.nav-btn-disabled.data-v-dd9903cc { opacity: 0.4;
+}
+.nav-cancel.data-v-dd9903cc {
+		font-size: 17px;
+		color: #8E8E93;
+		background-color: #E5E5EA;
+		padding: 6px 14px;
+		border-radius: 20px;
+}
+.nav-done.data-v-dd9903cc {
+		font-size: 17px;
+		color: #007AFF;
+		font-weight: 600;
+}
+.done-disabled.data-v-dd9903cc { color: #8E8E93;
+}
+.sheet-scroll.data-v-dd9903cc { flex: 1;
+}
+.type-display.data-v-dd9903cc {
+		padding: 4px 16px 12px;
+}
+.type-badge.data-v-dd9903cc {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 5px 12px;
+		border-radius: 20px;
+		align-self: flex-start;
+}
+.type-badge-text.data-v-dd9903cc {
+		font-size: 14px;
+		font-weight: 600;
+}
+.form-card.data-v-dd9903cc {
+		margin: 0 16px 12px;
+		background: #FFFFFF;
+		border-radius: 12px;
+		overflow: hidden;
+}
+.note-card.data-v-dd9903cc { padding: 14px 16px;
+}
+.form-row.data-v-dd9903cc {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 14px 16px;
+		gap: 12px;
+}
+.form-label.data-v-dd9903cc {
+		font-size: 16px;
+		color: #1C1C1E;
+		min-width: 36px;
+}
+.form-input.data-v-dd9903cc {
+		flex: 1;
+		font-size: 15px;
+		color: #1C1C1E;
+		background: transparent;
+		border: none;
+		outline: none;
+}
+.form-placeholder.data-v-dd9903cc { color: #C7C7CC;
+}
+.form-divider.data-v-dd9903cc {
+		height: 0.5px;
+		background-color: #E5E5EA;
+		margin: 0 16px;
+}
+.form-label-top.data-v-dd9903cc {
+		font-size: 15px;
+		font-weight: 500;
+		color: #1C1C1E;
+		margin-bottom: 10px;
+}
+.form-textarea.data-v-dd9903cc {
+		width: 100%;
+		min-height: 80px;
+		font-size: 15px;
+		color: #1C1C1E;
+		background: transparent;
+		border: none;
+		outline: none;
+		line-height: 1.5;
+}

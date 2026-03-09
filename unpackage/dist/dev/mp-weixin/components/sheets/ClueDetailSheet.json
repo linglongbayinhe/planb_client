@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "edit-clue-sheet": "./EditClueSheet"
+  }
+}

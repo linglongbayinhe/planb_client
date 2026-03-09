@@ -1,0 +1,8 @@
+{
+  "component": true,
+  "usingComponents": {
+    "login-register-sheet": "./sheets/LoginRegisterSheet",
+    "theme-picker-sheet": "./sheets/ThemePickerSheet",
+    "language-picker-sheet": "./sheets/LanguagePickerSheet"
+  }
+}

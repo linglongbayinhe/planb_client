@@ -1,0 +1,8 @@
+{
+  "component": true,
+  "usingComponents": {
+    "add-clue-sheet": "./sheets/AddClueSheet",
+    "export-p-d-f-sheet": "./sheets/ExportPDFSheet",
+    "clue-detail-sheet": "./sheets/ClueDetailSheet"
+  }
+}

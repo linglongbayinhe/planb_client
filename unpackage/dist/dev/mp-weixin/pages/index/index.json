@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom",
+  "disableScroll": true,
+  "usingComponents": {
+    "home-view": "../../components/HomeView",
+    "clues-view": "../../components/CluesView",
+    "send-view": "../../components/SendView",
+    "settings-view": "../../components/SettingsView"
+  }
+}

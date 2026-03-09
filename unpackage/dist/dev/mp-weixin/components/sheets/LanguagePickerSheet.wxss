@@ -1,0 +1,117 @@
+
+.sheet-overlay.data-v-3687e129 {
+		position: fixed;
+		top: 0; left: 0; right: 0; bottom: 0;
+		background-color: rgba(0, 0, 0, 0.4);
+		z-index: 1000;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+}
+.sheet-container.data-v-3687e129 {
+		background-color: #F2F2F7;
+		border-radius: 16px 16px 0 0;
+		max-height: 80vh;
+		display: flex;
+		flex-direction: column;
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.drag-handle.data-v-3687e129 {
+		width: 36px; height: 5px;
+		background-color: #C7C7CC;
+		border-radius: 3px;
+		margin: 10px auto 4px;
+}
+.sheet-nav.data-v-3687e129 {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 8px 16px 12px;
+}
+.sheet-title.data-v-3687e129 {
+		font-size: 17px;
+		font-weight: 600;
+		color: #1C1C1E;
+}
+.nav-btn.data-v-3687e129 { min-width: 44px; text-align: right;
+}
+.nav-done.data-v-3687e129 {
+		font-size: 17px;
+		color: #007AFF;
+		font-weight: 600;
+		background-color: #E5E5EA;
+		padding: 6px 14px;
+		border-radius: 20px;
+}
+.sheet-scroll.data-v-3687e129 { flex: 1;
+}
+.hint-banner.data-v-3687e129 {
+		margin: 0 16px 14px;
+		background-color: #EEF4FF;
+		border-radius: 10px;
+		padding: 10px 14px;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 8px;
+}
+.hint-icon.data-v-3687e129 { font-size: 14px;
+}
+.hint-text.data-v-3687e129 {
+		font-size: 14px;
+		color: #3A6EA5;
+}
+.lang-list.data-v-3687e129 {
+		margin: 0 16px;
+		background: #FFFFFF;
+		border-radius: 14px;
+		overflow: hidden;
+}
+.lang-row.data-v-3687e129 {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 14px 16px;
+		gap: 14px;
+}
+.lang-flag-wrap.data-v-3687e129 {
+		width: 40px; height: 30px;
+		border-radius: 4px;
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+}
+.lang-flag.data-v-3687e129 { font-size: 24px;
+}
+.lang-info.data-v-3687e129 { flex: 1;
+}
+.lang-name.data-v-3687e129 {
+		font-size: 16px;
+		font-weight: 500;
+		color: #1C1C1E;
+}
+.lang-name-en.data-v-3687e129 {
+		font-size: 13px;
+		color: #8E8E93;
+		margin-top: 2px;
+}
+.check-icon.data-v-3687e129 {
+		width: 24px; height: 24px;
+		background-color: #007AFF;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+}
+.check-text.data-v-3687e129 {
+		font-size: 13px;
+		color: #FFFFFF;
+		font-weight: 700;
+}
+.lang-divider.data-v-3687e129 {
+		height: 0.5px;
+		background-color: #E5E5EA;
+		margin-left: 70px;
+}
