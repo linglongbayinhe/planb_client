@@ -8,7 +8,9 @@ const _sfc_main = {
       statusBarHeight: 44,
       emailInput: "",
       phoneInput: "",
-      notifyExpanded: false
+      notifyExpanded: false,
+      maxEmails: 3,
+      maxPhones: 3
     };
   },
   computed: {
@@ -69,16 +71,38 @@ const _sfc_main = {
   },
   methods: {
     addEmail() {
-      const email = this.emailInput.trim();
-      if (!email || this.emails.length >= 3)
+      const email = this.emailInput.trim().toLowerCase();
+      if (!email)
         return;
-      store_index.mutations.updateSendPlan({ emails: [...this.emails, email] });
+      const emailReg = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      if (!emailReg.test(email)) {
+        common_vendor.index.showToast({ title: "请输入有效的邮箱地址", icon: "none" });
+        return;
+      }
+      if (this.emails.length >= this.maxEmails)
+        return;
+      if (this.emails.map((e) => e.toLowerCase()).includes(email)) {
+        common_vendor.index.showToast({ title: "该邮箱已存在", icon: "none" });
+        return;
+      }
+      store_index.mutations.updateSendPlan({ emails: [...this.emails, this.emailInput.trim()] });
       this.emailInput = "";
     },
     addPhone() {
       const phone = this.phoneInput.trim();
-      if (!phone || this.phones.length >= 3)
+      if (!phone)
         return;
+      const phoneReg = /^1[3-9]\d{9}$/;
+      if (!phoneReg.test(phone)) {
+        common_vendor.index.showToast({ title: "请输入有效的手机号", icon: "none" });
+        return;
+      }
+      if (this.phones.length >= this.maxPhones)
+        return;
+      if (this.phones.includes(phone)) {
+        common_vendor.index.showToast({ title: "该手机号已存在", icon: "none" });
+        return;
+      }
       store_index.mutations.updateSendPlan({ phones: [...this.phones, phone] });
       this.phoneInput = "";
     },
@@ -122,50 +146,64 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     a: $data.statusBarHeight + "px",
     b: common_vendor.t($options.planEnabled ? "已开启" : "已暂停"),
     c: common_vendor.n($options.planEnabled ? "badge-active" : "badge-paused"),
-    d: $data.emailInput,
-    e: common_vendor.o(($event) => $data.emailInput = $event.detail.value),
-    f: !$data.emailInput.trim() || $options.emails.length >= 3 ? 1 : "",
-    g: common_vendor.o((...args) => $options.addEmail && $options.addEmail(...args)),
-    h: $data.phoneInput,
-    i: common_vendor.o(($event) => $data.phoneInput = $event.detail.value),
-    j: !$data.phoneInput.trim() || $options.phones.length >= 3 ? 1 : "",
-    k: common_vendor.o((...args) => $options.addPhone && $options.addPhone(...args)),
-    l: common_vendor.f($options.emails, (email, i, i0) => {
-      return {
-        a: common_vendor.t(email),
-        b: common_vendor.o(($event) => $options.removeEmail(i), "e" + i),
-        c: "e" + i
-      };
-    }),
-    m: common_vendor.f($options.phones, (phone, i, i0) => {
-      return {
-        a: common_vendor.t(phone),
-        b: common_vendor.o(($event) => $options.removePhone(i), "p" + i),
-        c: "p" + i
-      };
-    }),
-    n: common_vendor.o((...args) => $options.saveDisplayName && $options.saveDisplayName(...args)),
-    o: $options.displayName,
-    p: common_vendor.o(($event) => $options.displayName = $event.detail.value),
-    q: common_vendor.t($data.notifyExpanded ? "∧" : "∨"),
-    r: common_vendor.o((...args) => $options.toggleNotifyExpand && $options.toggleNotifyExpand(...args)),
-    s: $data.notifyExpanded
-  }, $data.notifyExpanded ? {
-    t: common_vendor.t($options.displayName || "（未设置）"),
-    v: common_vendor.t($options.displayName || "（未设置）"),
-    w: common_vendor.o((...args) => $options.saveCustomGuide && $options.saveCustomGuide(...args)),
-    x: $options.customGuide,
-    y: common_vendor.o(($event) => $options.customGuide = $event.detail.value)
+    d: $options.emails.length < $data.maxEmails
+  }, $options.emails.length < $data.maxEmails ? {
+    e: $data.emailInput,
+    f: common_vendor.o(($event) => $data.emailInput = $event.detail.value),
+    g: !$data.emailInput.trim() ? 1 : "",
+    h: common_vendor.o((...args) => $options.addEmail && $options.addEmail(...args))
   } : {}, {
-    z: common_vendor.t($options.formattedSendDate),
-    A: common_vendor.t($options.intervalDays),
-    B: $options.intervalDays,
-    C: common_vendor.o((...args) => $options.onSliderChange && $options.onSliderChange(...args)),
-    D: common_vendor.o((...args) => $options.onSliderChanging && $options.onSliderChanging(...args)),
-    E: common_vendor.t($options.planEnabled ? "⏸" : "▶"),
-    F: common_vendor.t($options.planEnabled ? "关闭发送计划" : "开启发送计划"),
-    G: common_vendor.n($options.planEnabled ? "plan-btn-off" : "plan-btn-on"),
-    H: common_vendor.o((...args) => $options.togglePlan && $options.togglePlan(...args))
+    i: $options.emails.length < $data.maxEmails
+  }, $options.emails.length < $data.maxEmails ? {} : {}, {
+    j: $options.phones.length < $data.maxPhones
+  }, $options.phones.length < $data.maxPhones ? {
+    k: $data.phoneInput,
+    l: common_vendor.o(($event) => $data.phoneInput = $event.detail.value),
+    m: !$data.phoneInput.trim() ? 1 : "",
+    n: common_vendor.o((...args) => $options.addPhone && $options.addPhone(...args))
+  } : {}, {
+    o: $options.phones.length < $data.maxPhones || $options.emails.length > 0
+  }, $options.phones.length < $data.maxPhones || $options.emails.length > 0 ? {} : {}, {
+    p: common_vendor.f($options.emails, (email, i, i0) => {
+      return {
+        a: common_vendor.t(i + 1),
+        b: common_vendor.t(email),
+        c: common_vendor.o(($event) => $options.removeEmail(i), "e" + i),
+        d: "e" + i
+      };
+    }),
+    q: common_vendor.t($data.maxEmails),
+    r: common_vendor.f($options.phones, (phone, i, i0) => {
+      return {
+        a: common_vendor.t(i + 1),
+        b: common_vendor.t(phone),
+        c: common_vendor.o(($event) => $options.removePhone(i), "p" + i),
+        d: "p" + i
+      };
+    }),
+    s: common_vendor.t($data.maxPhones),
+    t: common_vendor.o((...args) => $options.saveDisplayName && $options.saveDisplayName(...args)),
+    v: $options.displayName,
+    w: common_vendor.o(($event) => $options.displayName = $event.detail.value),
+    x: common_vendor.t($data.notifyExpanded ? "∧" : "∨"),
+    y: common_vendor.o((...args) => $options.toggleNotifyExpand && $options.toggleNotifyExpand(...args)),
+    z: $data.notifyExpanded
+  }, $data.notifyExpanded ? {
+    A: common_vendor.t($options.displayName || "（未设置）"),
+    B: common_vendor.t($options.displayName || "（未设置）"),
+    C: common_vendor.o((...args) => $options.saveCustomGuide && $options.saveCustomGuide(...args)),
+    D: $options.customGuide,
+    E: common_vendor.o(($event) => $options.customGuide = $event.detail.value)
+  } : {}, {
+    F: common_vendor.t($options.formattedSendDate),
+    G: common_vendor.t($options.intervalDays),
+    H: $options.intervalDays,
+    I: common_vendor.o((...args) => $options.onSliderChange && $options.onSliderChange(...args)),
+    J: common_vendor.o((...args) => $options.onSliderChanging && $options.onSliderChanging(...args)),
+    K: $options.planEnabled ? "/static/icons/pause.png" : "/static/icons/play.png",
+    L: common_vendor.t($options.planEnabled ? "关闭发送计划" : "开启发送计划"),
+    M: common_vendor.n($options.planEnabled ? "plan-btn-off" : "plan-btn-on"),
+    N: common_vendor.o((...args) => $options.togglePlan && $options.togglePlan(...args))
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-b8a25f91"]]);

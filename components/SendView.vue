@@ -1,5 +1,7 @@
 <template>
 	<scroll-view class="send-page" scroll-y>
+		<!-- 顶部安全区域：env(safe-area-inset-top) 适配各机型状态栏/刘海，避免内容被遮挡 -->
+		<view class="safe-area"></view>
 		<!-- 顶部状态栏占位 -->
 		<view class="status-bar-placeholder" :style="{ height: statusBarHeight + 'px' }"></view>
 
@@ -20,52 +22,54 @@
 		</view>
 
 		<view class="contacts-card card">
-			<!-- 邮箱输入 -->
-			<view class="input-row">
+			<!-- 添加邮箱行：满 3 个时整行隐藏 -->
+			<view v-if="emails.length < maxEmails" class="input-row">
 				<input
 					class="contact-input"
 					v-model="emailInput"
 					placeholder="添加邮箱"
 					placeholder-class="input-placeholder"
-					type="email"
+					type="text"
 					:maxlength="100"
 				/>
 				<view
 					class="add-contact-btn"
-					:class="{ 'add-contact-btn-disabled': !emailInput.trim() || emails.length >= 3 }"
+					:class="{ 'add-contact-btn-disabled': !emailInput.trim() }"
 					@click="addEmail"
 				>
 					<text class="add-contact-icon">+</text>
 				</view>
 			</view>
 
-			<!-- 邮箱分割线 -->
-			<view class="divider"></view>
+			<view v-if="emails.length < maxEmails" class="divider"></view>
 
-			<!-- 手机号输入 -->
-			<view class="input-row">
+			<!-- 添加手机号行：满 3 个时整行隐藏 -->
+			<view v-if="phones.length < maxPhones" class="input-row">
 				<input
 					class="contact-input"
 					v-model="phoneInput"
 					placeholder="添加手机号"
 					placeholder-class="input-placeholder"
 					type="number"
-					:maxlength="20"
+					:maxlength="11"
 				/>
 				<view
 					class="add-contact-btn"
-					:class="{ 'add-contact-btn-disabled': !phoneInput.trim() || phones.length >= 3 }"
+					:class="{ 'add-contact-btn-disabled': !phoneInput.trim() }"
 					@click="addPhone"
 				>
 					<text class="add-contact-icon">+</text>
 				</view>
 			</view>
 
+			<view v-if="phones.length < maxPhones || emails.length > 0" class="divider"></view>
+
 			<!-- 已添加的邮箱列表 -->
 			<view v-for="(email, i) in emails" :key="'e'+i">
 				<view class="divider"></view>
 				<view class="contact-item">
 					<text class="contact-type-icon">✉️</text>
+					<text class="contact-label">邮箱（{{ i + 1 }}/{{ maxEmails }}）</text>
 					<text class="contact-value">{{ email }}</text>
 					<view class="delete-btn" @click="removeEmail(i)">
 						<text class="delete-icon">✕</text>
@@ -78,6 +82,7 @@
 				<view class="divider"></view>
 				<view class="contact-item">
 					<text class="contact-type-icon">📱</text>
+					<text class="contact-label">手机号（{{ i + 1 }}/{{ maxPhones }}）</text>
 					<text class="contact-value">{{ phone }}</text>
 					<view class="delete-btn" @click="removePhone(i)">
 						<text class="delete-icon">✕</text>
@@ -150,22 +155,24 @@
 				</view>
 				<text class="trigger-days">{{ intervalDays }}天</text>
 			</view>
-			<slider
-				class="trigger-slider"
-				:value="intervalDays"
-				:min="7"
-				:max="365"
-				:step="1"
-				activeColor="#007AFF"
-				backgroundColor="#E5E5EA"
-				block-color="#FFFFFF"
-				block-size="24"
-				@change="onSliderChange"
-				@changing="onSliderChanging"
-			/>
-			<view class="slider-labels">
-				<text class="slider-label">MIN</text>
-				<text class="slider-label">MAX</text>
+			<view class="trigger-slider-wrap">
+				<slider
+					class="trigger-slider"
+					:value="intervalDays"
+					:min="7"
+					:max="365"
+					:step="1"
+					activeColor="#007AFF"
+					backgroundColor="#E5E5EA"
+					block-color="#FFFFFF"
+					block-size="24"
+					@change="onSliderChange"
+					@changing="onSliderChanging"
+				/>
+				<view class="slider-labels">
+					<text class="slider-label">MIN</text>
+					<text class="slider-label">MAX</text>
+				</view>
 			</view>
 		</view>
 
@@ -176,7 +183,11 @@
 				:class="planEnabled ? 'plan-btn-off' : 'plan-btn-on'"
 				@click="togglePlan"
 			>
-				<text class="plan-btn-icon">{{ planEnabled ? '⏸' : '▶' }}</text>
+				<image
+					class="plan-btn-icon-img"
+					:src="planEnabled ? '/static/icons/pause.png' : '/static/icons/play.png'"
+					mode="aspectFit"
+				/>
 				<text class="plan-btn-text">{{ planEnabled ? '关闭发送计划' : '开启发送计划' }}</text>
 			</view>
 		</view>
@@ -200,7 +211,9 @@
 				statusBarHeight: 44,
 				emailInput: '',
 				phoneInput: '',
-				notifyExpanded: false
+				notifyExpanded: false,
+				maxEmails: 3,
+				maxPhones: 3
 			}
 		},
 		computed: {
@@ -244,14 +257,34 @@
 		},
 		methods: {
 			addEmail() {
-				const email = this.emailInput.trim()
-				if (!email || this.emails.length >= 3) return
-				mutations.updateSendPlan({ emails: [...this.emails, email] })
+				const email = this.emailInput.trim().toLowerCase()
+				if (!email) return
+				const emailReg = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
+				if (!emailReg.test(email)) {
+					uni.showToast({ title: '请输入有效的邮箱地址', icon: 'none' })
+					return
+				}
+				if (this.emails.length >= this.maxEmails) return
+				if (this.emails.map(e => e.toLowerCase()).includes(email)) {
+					uni.showToast({ title: '该邮箱已存在', icon: 'none' })
+					return
+				}
+				mutations.updateSendPlan({ emails: [...this.emails, this.emailInput.trim()] })
 				this.emailInput = ''
 			},
 			addPhone() {
 				const phone = this.phoneInput.trim()
-				if (!phone || this.phones.length >= 3) return
+				if (!phone) return
+				const phoneReg = /^1[3-9]\d{9}$/
+				if (!phoneReg.test(phone)) {
+					uni.showToast({ title: '请输入有效的手机号', icon: 'none' })
+					return
+				}
+				if (this.phones.length >= this.maxPhones) return
+				if (this.phones.includes(phone)) {
+					uni.showToast({ title: '该手机号已存在', icon: 'none' })
+					return
+				}
 				mutations.updateSendPlan({ phones: [...this.phones, phone] })
 				this.phoneInput = ''
 			},
@@ -297,6 +330,12 @@
 		width: 100%;
 		height: 100%;
 		background-color: #F2F2F7;
+	}
+
+	.safe-area {
+		width: 100%;
+		height: env(safe-area-inset-top);
+		background-color: #fff;
 	}
 
 	.status-bar-placeholder {
@@ -427,21 +466,36 @@
 		padding: 12px 16px;
 		gap: 10px;
 		background-color: #EEF4FF;
+		min-width: 0;
 	}
 
 	.contact-type-icon {
 		font-size: 16px;
+		flex-shrink: 0;
+	}
+
+	.contact-label {
+		font-size: 12px;
+		color: #8E8E93;
+		margin-right: 6px;
+		flex-shrink: 0;
 	}
 
 	.contact-value {
 		flex: 1;
+		min-width: 0;
 		font-size: 15px;
 		color: #1C1C1E;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 
 	.delete-btn {
-		width: 20px;
-		height: 20px;
+		width: 40rpx;
+		min-width: 40rpx;
+		height: 40rpx;
+		flex-shrink: 0;
 		background-color: rgba(60, 60, 67, 0.3);
 		border-radius: 50%;
 		display: flex;
@@ -553,11 +607,12 @@
 		min-height: 60px;
 		background-color: #F2F2F7;
 		border-radius: 8px;
-		padding: 10px;
+		padding: 16rpx 30rpx;
 		font-size: 14px;
 		color: #1C1C1E;
 		border: none;
 		outline: none;
+		box-sizing: border-box;
 	}
 
 	.notify-hint {
@@ -605,16 +660,22 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
+		justify-content: flex-start;
 		gap: 4px;
+		min-width: 200px;
 	}
 
 	.trigger-date-icon {
 		font-size: 12px;
+		flex-shrink: 0;
 	}
 
 	.trigger-date-text {
 		font-size: 13px;
 		color: #8E8E93;
+		text-align: left;
+		flex: 1;
+		min-width: 0;
 	}
 
 	.trigger-days {
@@ -623,9 +684,15 @@
 		color: #007AFF;
 	}
 
+	.trigger-slider-wrap {
+		padding: 0 16px;
+		box-sizing: border-box;
+	}
+
 	.trigger-slider {
 		width: 100%;
-		margin-bottom: 4px;
+		margin: 0 0 4px 0;
+		box-sizing: border-box;
 	}
 
 	.slider-labels {
@@ -659,11 +726,21 @@
 	}
 
 	.plan-btn-off {
-		background-color: #FF3B30;
+		background-color:  #FF3B30;
 	}
 
-	.plan-btn-icon {
-		font-size: 16px;
+	.plan-btn-icon-img {
+		width: 40rpx;
+		height: 40rpx;
+		margin-right: 10rpx;
+		flex-shrink: 0;
+	}
+
+	.plan-btn-off .plan-btn-icon-img {
+		filter: brightness(0) invert(1);
+	}
+
+	.plan-btn-off .plan-btn-text {
 		color: #FFFFFF;
 	}
 
