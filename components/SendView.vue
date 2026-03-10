@@ -1,10 +1,9 @@
 <template>
-	<scroll-view class="send-page" scroll-y>
-		<!-- 顶部安全区域：env(safe-area-inset-top) 适配各机型状态栏/刘海，避免内容被遮挡 -->
-		<view class="safe-area"></view>
-		<!-- 顶部状态栏占位 -->
-		<view class="status-bar-placeholder" :style="{ height: statusBarHeight + 'px' }"></view>
-
+	<scroll-view
+		class="send-page"
+		scroll-y
+		:style="{ paddingTop: (statusBarHeight || 0) + 'px' }"
+	>
 		<!-- 标题栏 -->
 		<view class="header-area">
 			<view class="title-row">
@@ -249,11 +248,12 @@
 			}
 		},
 		mounted() {
-			uni.getSystemInfo({
-				success: (info) => {
-					this.statusBarHeight = info.statusBarHeight || 44
-				}
-			})
+			try {
+				const info = uni.getSystemInfoSync()
+				this.statusBarHeight = info.statusBarHeight ?? 44
+			} catch (e) {
+				this.statusBarHeight = 44
+			}
 		},
 		methods: {
 			addEmail() {
@@ -329,17 +329,8 @@
 	.send-page {
 		width: 100%;
 		height: 100%;
-		background-color: #F2F2F7;
-	}
-
-	.safe-area {
-		width: 100%;
-		height: env(safe-area-inset-top);
-		background-color: #fff;
-	}
-
-	.status-bar-placeholder {
-		width: 100%;
+		background-color: #F5F5F5;
+		box-sizing: border-box;
 	}
 
 	.header-area {

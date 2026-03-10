@@ -63,11 +63,12 @@ const _sfc_main = {
     }
   },
   mounted() {
-    common_vendor.index.getSystemInfo({
-      success: (info) => {
-        this.statusBarHeight = info.statusBarHeight || 44;
-      }
-    });
+    try {
+      const info = common_vendor.index.getSystemInfoSync();
+      this.statusBarHeight = info.statusBarHeight ?? 44;
+    } catch (e) {
+      this.statusBarHeight = 44;
+    }
   },
   methods: {
     addEmail() {
@@ -143,28 +144,27 @@ const _sfc_main = {
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: $data.statusBarHeight + "px",
-    b: common_vendor.t($options.planEnabled ? "已开启" : "已暂停"),
-    c: common_vendor.n($options.planEnabled ? "badge-active" : "badge-paused"),
-    d: $options.emails.length < $data.maxEmails
+    a: common_vendor.t($options.planEnabled ? "已开启" : "已暂停"),
+    b: common_vendor.n($options.planEnabled ? "badge-active" : "badge-paused"),
+    c: $options.emails.length < $data.maxEmails
   }, $options.emails.length < $data.maxEmails ? {
-    e: $data.emailInput,
-    f: common_vendor.o(($event) => $data.emailInput = $event.detail.value),
-    g: !$data.emailInput.trim() ? 1 : "",
-    h: common_vendor.o((...args) => $options.addEmail && $options.addEmail(...args))
+    d: $data.emailInput,
+    e: common_vendor.o(($event) => $data.emailInput = $event.detail.value),
+    f: !$data.emailInput.trim() ? 1 : "",
+    g: common_vendor.o((...args) => $options.addEmail && $options.addEmail(...args))
   } : {}, {
-    i: $options.emails.length < $data.maxEmails
+    h: $options.emails.length < $data.maxEmails
   }, $options.emails.length < $data.maxEmails ? {} : {}, {
-    j: $options.phones.length < $data.maxPhones
+    i: $options.phones.length < $data.maxPhones
   }, $options.phones.length < $data.maxPhones ? {
-    k: $data.phoneInput,
-    l: common_vendor.o(($event) => $data.phoneInput = $event.detail.value),
-    m: !$data.phoneInput.trim() ? 1 : "",
-    n: common_vendor.o((...args) => $options.addPhone && $options.addPhone(...args))
+    j: $data.phoneInput,
+    k: common_vendor.o(($event) => $data.phoneInput = $event.detail.value),
+    l: !$data.phoneInput.trim() ? 1 : "",
+    m: common_vendor.o((...args) => $options.addPhone && $options.addPhone(...args))
   } : {}, {
-    o: $options.phones.length < $data.maxPhones || $options.emails.length > 0
+    n: $options.phones.length < $data.maxPhones || $options.emails.length > 0
   }, $options.phones.length < $data.maxPhones || $options.emails.length > 0 ? {} : {}, {
-    p: common_vendor.f($options.emails, (email, i, i0) => {
+    o: common_vendor.f($options.emails, (email, i, i0) => {
       return {
         a: common_vendor.t(i + 1),
         b: common_vendor.t(email),
@@ -172,8 +172,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         d: "e" + i
       };
     }),
-    q: common_vendor.t($data.maxEmails),
-    r: common_vendor.f($options.phones, (phone, i, i0) => {
+    p: common_vendor.t($data.maxEmails),
+    q: common_vendor.f($options.phones, (phone, i, i0) => {
       return {
         a: common_vendor.t(i + 1),
         b: common_vendor.t(phone),
@@ -181,29 +181,30 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         d: "p" + i
       };
     }),
-    s: common_vendor.t($data.maxPhones),
-    t: common_vendor.o((...args) => $options.saveDisplayName && $options.saveDisplayName(...args)),
-    v: $options.displayName,
-    w: common_vendor.o(($event) => $options.displayName = $event.detail.value),
-    x: common_vendor.t($data.notifyExpanded ? "∧" : "∨"),
-    y: common_vendor.o((...args) => $options.toggleNotifyExpand && $options.toggleNotifyExpand(...args)),
-    z: $data.notifyExpanded
+    r: common_vendor.t($data.maxPhones),
+    s: common_vendor.o((...args) => $options.saveDisplayName && $options.saveDisplayName(...args)),
+    t: $options.displayName,
+    v: common_vendor.o(($event) => $options.displayName = $event.detail.value),
+    w: common_vendor.t($data.notifyExpanded ? "∧" : "∨"),
+    x: common_vendor.o((...args) => $options.toggleNotifyExpand && $options.toggleNotifyExpand(...args)),
+    y: $data.notifyExpanded
   }, $data.notifyExpanded ? {
+    z: common_vendor.t($options.displayName || "（未设置）"),
     A: common_vendor.t($options.displayName || "（未设置）"),
-    B: common_vendor.t($options.displayName || "（未设置）"),
-    C: common_vendor.o((...args) => $options.saveCustomGuide && $options.saveCustomGuide(...args)),
-    D: $options.customGuide,
-    E: common_vendor.o(($event) => $options.customGuide = $event.detail.value)
+    B: common_vendor.o((...args) => $options.saveCustomGuide && $options.saveCustomGuide(...args)),
+    C: $options.customGuide,
+    D: common_vendor.o(($event) => $options.customGuide = $event.detail.value)
   } : {}, {
-    F: common_vendor.t($options.formattedSendDate),
-    G: common_vendor.t($options.intervalDays),
-    H: $options.intervalDays,
-    I: common_vendor.o((...args) => $options.onSliderChange && $options.onSliderChange(...args)),
-    J: common_vendor.o((...args) => $options.onSliderChanging && $options.onSliderChanging(...args)),
-    K: $options.planEnabled ? "/static/icons/pause.png" : "/static/icons/play.png",
-    L: common_vendor.t($options.planEnabled ? "关闭发送计划" : "开启发送计划"),
-    M: common_vendor.n($options.planEnabled ? "plan-btn-off" : "plan-btn-on"),
-    N: common_vendor.o((...args) => $options.togglePlan && $options.togglePlan(...args))
+    E: common_vendor.t($options.formattedSendDate),
+    F: common_vendor.t($options.intervalDays),
+    G: $options.intervalDays,
+    H: common_vendor.o((...args) => $options.onSliderChange && $options.onSliderChange(...args)),
+    I: common_vendor.o((...args) => $options.onSliderChanging && $options.onSliderChanging(...args)),
+    J: $options.planEnabled ? "/static/icons/pause.png" : "/static/icons/play.png",
+    K: common_vendor.t($options.planEnabled ? "关闭发送计划" : "开启发送计划"),
+    L: common_vendor.n($options.planEnabled ? "plan-btn-off" : "plan-btn-on"),
+    M: common_vendor.o((...args) => $options.togglePlan && $options.togglePlan(...args)),
+    N: ($data.statusBarHeight || 0) + "px"
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-b8a25f91"]]);
