@@ -92,9 +92,16 @@
 		background-color: #E5E5EA;
 		white-space: nowrap;
 		flex-shrink: 0;
+		transition: transform 0.2s ease-out;
 }
 .filter-chip-active.data-v-cac9647b {
 		background-color: #007AFF;
+}
+.filter-chip-dragging.data-v-cac9647b {
+		transition: none;
+}
+.filter-chip-dragging.filter-chip-release.data-v-cac9647b {
+		transition: transform 0.2s ease-out;
 }
 .filter-chip-text.data-v-cac9647b {
 		font-size: 14px;

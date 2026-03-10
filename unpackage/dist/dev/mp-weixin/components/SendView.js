@@ -104,11 +104,6 @@ const _sfc_main = {
     onSliderChange(e) {
       const days = e.detail.value;
       store_index.mutations.updateSendPlan({ intervalDays: days });
-      if (this.planEnabled) {
-        const newDate = /* @__PURE__ */ new Date();
-        newDate.setDate(newDate.getDate() + days);
-        store_index.mutations.updateSendPlan({ sendDate: newDate.toISOString() });
-      }
     },
     onSliderChanging(e) {
       store_index.mutations.updateSendPlan({ intervalDays: e.detail.value });
@@ -117,13 +112,7 @@ const _sfc_main = {
       if (this.planEnabled) {
         store_index.mutations.updateSendPlan({ enabled: false });
       } else {
-        const days = store_index.store.sendPlan.intervalDays || 7;
-        const newDate = /* @__PURE__ */ new Date();
-        newDate.setDate(newDate.getDate() + days);
-        store_index.mutations.updateSendPlan({
-          enabled: true,
-          sendDate: newDate.toISOString()
-        });
+        store_index.mutations.updateSendPlan({ enabled: true });
       }
     }
   }

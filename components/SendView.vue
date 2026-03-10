@@ -277,11 +277,6 @@
 			onSliderChange(e) {
 				const days = e.detail.value
 				mutations.updateSendPlan({ intervalDays: days })
-				if (this.planEnabled) {
-					const newDate = new Date()
-					newDate.setDate(newDate.getDate() + days)
-					mutations.updateSendPlan({ sendDate: newDate.toISOString() })
-				}
 			},
 			onSliderChanging(e) {
 				mutations.updateSendPlan({ intervalDays: e.detail.value })
@@ -290,13 +285,7 @@
 				if (this.planEnabled) {
 					mutations.updateSendPlan({ enabled: false })
 				} else {
-					const days = store.sendPlan.intervalDays || 7
-					const newDate = new Date()
-					newDate.setDate(newDate.getDate() + days)
-					mutations.updateSendPlan({
-						enabled: true,
-						sendDate: newDate.toISOString()
-					})
+					mutations.updateSendPlan({ enabled: true })
 				}
 			}
 		}

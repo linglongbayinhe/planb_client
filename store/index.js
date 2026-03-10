@@ -28,12 +28,15 @@ function loadStr(key, fallback) {
 	}
 }
 
+const defaultCategoryOrder = ['digital', 'important', 'family']
+
 export const store = reactive({
 	clues: loadJSON('clues', []),
 	sendPlan: Object.assign({}, defaultPlan, loadJSON('plan', {})),
 	currentUser: loadJSON('user', null),
 	theme: loadStr('theme', 'minimal'),
-	language: loadStr('language', 'zh-CN')
+	language: loadStr('language', 'zh-CN'),
+	categoryOrder: loadJSON('clueCategoryOrder', defaultCategoryOrder)
 })
 
 export const mutations = {
@@ -85,12 +88,19 @@ export const mutations = {
 		uni.setStorageSync('language', lang)
 	},
 
+	setCategoryOrder(order) {
+		store.categoryOrder = order
+		uni.setStorageSync('clueCategoryOrder', JSON.stringify(order))
+	},
+
 	resetAll() {
 		store.clues = []
 		store.sendPlan = Object.assign({}, defaultPlan)
 		store.currentUser = null
+		store.categoryOrder = defaultCategoryOrder
 		uni.removeStorageSync('clues')
 		uni.removeStorageSync('plan')
 		uni.removeStorageSync('user')
+		uni.removeStorageSync('clueCategoryOrder')
 	}
 }

@@ -28,17 +28,29 @@
 			</view>
 		</view>
 
-		<!-- 分段筛选 -->
-		<scroll-view class="filter-scroll" scroll-x>
-			<view class="filter-row">
+		<!-- 分段筛选（可拖动排序，全部固定） -->
+		<scroll-view class="filter-scroll" scroll-x :scroll-left="filterScrollLeft" @scroll="onFilterScroll">
+			<view
+				class="filter-row"
+				@touchmove="onFilterRowTouchMove"
+			>
 				<view
-					v-for="(cat, i) in categories"
-					:key="i"
+					v-for="(cat, i) in displayCategories"
+					:key="cat.key"
 					class="filter-chip"
-					:class="{ 'filter-chip-active': currentCategory === cat.key }"
-					@click="currentCategory = cat.key"
+					:class="{
+						'filter-chip-active': currentCategory === cat.key && !dragState.active,
+						'filter-chip-dragging': dragState.active && i === dragState.dropIndex + 1,
+						'filter-chip-release': dragReleasePhase && i === dragState.dropIndex + 1
+					}"
+					:style="getDragChipStyle(i)"
+					@click="onFilterChipClick(i)"
+					@touchstart="onTagTouchStart($event, i)"
+					@touchmove="onTagTouchMove($event, i)"
+					@touchend="onTagTouchEnd"
+					@touchcancel="onTagTouchEnd"
 				>
-					<text class="filter-chip-text" :class="{ 'filter-chip-text-active': currentCategory === cat.key }">
+					<text class="filter-chip-text" :class="{ 'filter-chip-text-active': currentCategory === cat.key && !dragState.active }">
 						{{ cat.label }}
 					</text>
 				</view>
@@ -149,15 +161,47 @@
 				showExportSheet: false,
 				showDetailSheet: false,
 				selectedClue: null,
-				categories: [
-					{ key: 'all', label: '全部' },
-					{ key: 'digital', label: '数字资产' },
-					{ key: 'important', label: '重要物品' },
-					{ key: 'family', label: '给家人的话' }
-				]
+				filterScrollLeft: 0,
+				dragState: {
+					active: false,
+					movableIndex: -1,
+					dropIndex: -1
+				},
+				dragOffsetPx: 0,
+				dragReleasePhase: false,
+				_longPressTimer: null,
+				_touchStartX: 0,
+				_lastMoveX: 0,
+				_chipWidth: 90,
+				_categoryLabelMap: {
+					all: '全部',
+					digital: '数字资产',
+					important: '重要物品',
+					family: '给家人的话'
+				}
 			}
 		},
 		computed: {
+			categories() {
+				const order = store.categoryOrder || ['digital', 'important', 'family']
+				return [
+					{ key: 'all', label: this._categoryLabelMap.all },
+					...order.map(k => ({ key: k, label: this._categoryLabelMap[k] || k }))
+				]
+			},
+			displayCategories() {
+				if (!this.dragState.active || this.dragState.movableIndex < 0) {
+					return this.categories
+				}
+				const movable = this.categories.slice(1)
+				const from = this.dragState.movableIndex
+				const to = this.dragState.dropIndex
+				if (from === to) return this.categories
+				const arr = movable.slice()
+				const [item] = arr.splice(from, 1)
+				arr.splice(to, 0, item)
+				return [{ key: 'all', label: this._categoryLabelMap.all }, ...arr]
+			},
 			filteredClues() {
 				let list = store.clues
 				if (this.currentCategory !== 'all') {
@@ -170,7 +214,16 @@
 						return vals.includes(q)
 					})
 				}
-				return list
+				const order = store.categoryOrder || ['digital', 'important', 'family']
+				const typeOrder = (type) => {
+					const i = order.indexOf(type)
+					return i === -1 ? 999 : i
+				}
+				return list.slice().sort((a, b) => {
+					const o = typeOrder(a.type) - typeOrder(b.type)
+					if (o !== 0) return o
+					return (new Date(b.updatedAt) || 0) - (new Date(a.updatedAt) || 0)
+				})
 			}
 		},
 		mounted() {
@@ -181,6 +234,88 @@
 			})
 		},
 		methods: {
+			getDragChipStyle(i) {
+				if (!this.dragState.active || i !== this.dragState.dropIndex + 1) return {}
+				const px = this.dragOffsetPx || 0
+				return { transform: 'translateX(' + px + 'px) scale(1.05)' }
+			},
+			onFilterScroll(e) {
+				this.filterScrollLeft = e.detail.scrollLeft
+			},
+			onFilterChipClick(i) {
+				if (this.dragState.active) return
+				this.currentCategory = this.displayCategories[i].key
+			},
+			onTagTouchStart(e, i) {
+				if (i === 0) return
+				const movableIndex = i - 1
+				const touch = e.touches && e.touches[0]
+				if (!touch) return
+				this._touchStartX = touch.clientX
+				this._lastMoveX = touch.clientX
+				if (this._longPressTimer) clearTimeout(this._longPressTimer)
+				this._longPressTimer = setTimeout(() => {
+					this._longPressTimer = null
+					this.dragOffsetPx = 0
+					this.dragReleasePhase = false
+					this._lastMoveX = this._touchStartX
+					this.dragState = { active: true, movableIndex, dropIndex: movableIndex }
+				}, 320)
+			},
+			onFilterRowTouchMove(e) {
+				if (this.dragState.active) {
+					e.preventDefault && e.preventDefault()
+					e.stopPropagation && e.stopPropagation()
+				}
+			},
+			onTagTouchMove(e, i) {
+				if (this._longPressTimer) {
+					clearTimeout(this._longPressTimer)
+					this._longPressTimer = null
+				}
+				if (!this.dragState.active) return
+				if (e.preventDefault) e.preventDefault()
+				if (e.stopPropagation) e.stopPropagation()
+				const touch = e.touches && e.touches[0]
+				if (!touch) return
+				const clientX = touch.clientX
+				const delta = clientX - this._lastMoveX
+				this._lastMoveX = clientX
+				const chipWidth = this._chipWidth
+				let newOffset = this.dragOffsetPx + delta
+				let dropIndex = this.dragState.dropIndex
+				while (newOffset >= chipWidth / 2 && dropIndex < 2) {
+					newOffset -= chipWidth
+					dropIndex++
+				}
+				while (newOffset <= -chipWidth / 2 && dropIndex > 0) {
+					newOffset += chipWidth
+					dropIndex--
+				}
+				this.dragOffsetPx = newOffset
+				if (dropIndex !== this.dragState.dropIndex) {
+					this.dragState = { ...this.dragState, dropIndex }
+				}
+			},
+			onTagTouchEnd() {
+				if (this._longPressTimer) {
+					clearTimeout(this._longPressTimer)
+					this._longPressTimer = null
+				}
+				if (!this.dragState.active) return
+				const { movableIndex, dropIndex } = this.dragState
+				const order = store.categoryOrder.slice()
+				const [item] = order.splice(movableIndex, 1)
+				order.splice(dropIndex, 0, item)
+				this.dragReleasePhase = true
+				this.dragOffsetPx = 0
+				const self = this
+				setTimeout(function () {
+					mutations.setCategoryOrder(order)
+					self.dragState = { active: false, movableIndex: -1, dropIndex: -1 }
+					self.dragReleasePhase = false
+				}, 220)
+			},
 			onSearch() {},
 			clearSearch() {
 				this.searchText = ''
@@ -351,10 +486,18 @@
 		background-color: #E5E5EA;
 		white-space: nowrap;
 		flex-shrink: 0;
+		transition: transform 0.2s ease-out;
 	}
 
 	.filter-chip-active {
 		background-color: #007AFF;
+	}
+
+	.filter-chip-dragging {
+		transition: none;
+	}
+	.filter-chip-dragging.filter-chip-release {
+		transition: transform 0.2s ease-out;
 	}
 
 	.filter-chip-text {

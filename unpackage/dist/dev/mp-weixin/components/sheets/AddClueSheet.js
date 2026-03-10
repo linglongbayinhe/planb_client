@@ -13,6 +13,9 @@ const _sfc_main = {
   data() {
     return {
       selectedType: this.initialType || "important",
+      validationError: "",
+      formContentVisible: true,
+      formBodyAnimate: false,
       form: {
         name: "",
         location: "",
@@ -46,9 +49,45 @@ const _sfc_main = {
     onCancel() {
       this.$emit("close");
     },
-    onSave() {
-      if (!this.canSave)
+    onTypeChange(key) {
+      if (key === this.selectedType)
         return;
+      this.validationError = "";
+      this.formContentVisible = false;
+      this.formBodyAnimate = false;
+      this.selectedType = key;
+      this.resetForm();
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.formContentVisible = true;
+          this.formBodyAnimate = true;
+        }, 40);
+      });
+    },
+    resetForm() {
+      this.form = {
+        name: "",
+        location: "",
+        relation: "",
+        note: "",
+        platform: "",
+        account: "",
+        title: "",
+        target: "",
+        background: ""
+      };
+    },
+    onSave() {
+      if (!this.canSave) {
+        if (this.selectedType === "important")
+          this.validationError = "请填写名称";
+        else if (this.selectedType === "digital")
+          this.validationError = "请填写平台";
+        else if (this.selectedType === "family")
+          this.validationError = "请填写标题";
+        return;
+      }
+      this.validationError = "";
       const clue = { type: this.selectedType };
       if (this.selectedType === "important") {
         Object.assign(clue, {
@@ -89,52 +128,48 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         b: $data.selectedType === t.key ? 1 : "",
         c: t.key,
         d: $data.selectedType === t.key ? 1 : "",
-        e: common_vendor.o(($event) => $data.selectedType = t.key, t.key)
+        e: common_vendor.o(($event) => $options.onTypeChange(t.key), t.key)
       };
     }),
-    f: $data.selectedType === "important"
-  }, $data.selectedType === "important" ? {
-    g: $data.form.name,
-    h: common_vendor.o(($event) => $data.form.name = $event.detail.value),
-    i: $data.form.location,
-    j: common_vendor.o(($event) => $data.form.location = $event.detail.value),
-    k: $data.form.relation,
-    l: common_vendor.o(($event) => $data.form.relation = $event.detail.value)
+    f: $data.validationError
+  }, $data.validationError ? {
+    g: common_vendor.t($data.validationError)
   } : {}, {
-    m: $data.selectedType === "important"
-  }, $data.selectedType === "important" ? {
-    n: $data.form.note,
-    o: common_vendor.o(($event) => $data.form.note = $event.detail.value)
-  } : {}, {
-    p: $data.selectedType === "digital"
-  }, $data.selectedType === "digital" ? {
-    q: $data.form.platform,
-    r: common_vendor.o(($event) => $data.form.platform = $event.detail.value),
-    s: $data.form.account,
-    t: common_vendor.o(($event) => $data.form.account = $event.detail.value),
-    v: $data.form.relation,
-    w: common_vendor.o(($event) => $data.form.relation = $event.detail.value)
-  } : {}, {
-    x: $data.selectedType === "digital"
-  }, $data.selectedType === "digital" ? {
-    y: $data.form.note,
-    z: common_vendor.o(($event) => $data.form.note = $event.detail.value)
-  } : {}, {
-    A: $data.selectedType === "family"
-  }, $data.selectedType === "family" ? {
-    B: $data.form.title,
-    C: common_vendor.o(($event) => $data.form.title = $event.detail.value),
-    D: $data.form.target,
-    E: common_vendor.o(($event) => $data.form.target = $event.detail.value),
-    F: $data.form.background,
-    G: common_vendor.o(($event) => $data.form.background = $event.detail.value)
-  } : {}, {
-    H: $data.selectedType === "family"
-  }, $data.selectedType === "family" ? {
-    I: $data.form.note,
-    J: common_vendor.o(($event) => $data.form.note = $event.detail.value)
-  } : {}, {
-    K: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args))
+    h: common_vendor.o([($event) => $data.form.name = $event.detail.value, ($event) => $data.validationError = ""]),
+    i: $data.form.name,
+    j: $data.form.location,
+    k: common_vendor.o(($event) => $data.form.location = $event.detail.value),
+    l: $data.form.relation,
+    m: common_vendor.o(($event) => $data.form.relation = $event.detail.value),
+    n: $data.selectedType === "important",
+    o: $data.form.note,
+    p: common_vendor.o(($event) => $data.form.note = $event.detail.value),
+    q: $data.selectedType === "important",
+    r: common_vendor.o([($event) => $data.form.platform = $event.detail.value, ($event) => $data.validationError = ""]),
+    s: $data.form.platform,
+    t: $data.form.account,
+    v: common_vendor.o(($event) => $data.form.account = $event.detail.value),
+    w: $data.form.relation,
+    x: common_vendor.o(($event) => $data.form.relation = $event.detail.value),
+    y: $data.selectedType === "digital",
+    z: $data.form.note,
+    A: common_vendor.o(($event) => $data.form.note = $event.detail.value),
+    B: $data.selectedType === "digital",
+    C: common_vendor.o([($event) => $data.form.title = $event.detail.value, ($event) => $data.validationError = ""]),
+    D: $data.form.title,
+    E: $data.form.target,
+    F: common_vendor.o(($event) => $data.form.target = $event.detail.value),
+    G: $data.form.background,
+    H: common_vendor.o(($event) => $data.form.background = $event.detail.value),
+    I: $data.selectedType === "family",
+    J: $data.form.note,
+    K: common_vendor.o(($event) => $data.form.note = $event.detail.value),
+    L: $data.selectedType === "family",
+    M: $data.formContentVisible ? 1 : "",
+    N: $data.formBodyAnimate ? 1 : "",
+    O: common_vendor.o(() => {
+    }),
+    P: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args))
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-4f4b4649"]]);

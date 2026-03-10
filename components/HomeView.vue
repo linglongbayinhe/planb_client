@@ -92,7 +92,7 @@
 		data() {
 			return {
 				statusBarHeight: 44,
-				timer: null,
+				timeoutId: null,
 				now: new Date()
 			}
 		},
@@ -126,7 +126,8 @@
 				}
 			},
 			formattedSendDate() {
-				if (!this.sendDate || !this.planEnabled) return '暂未开启发送计划'
+				if (!this.planEnabled) return '暂未开启发送计划'
+				if (!this.sendDate) return '点击下方「刷新倒计时」计算'
 				const d = this.sendDate
 				const year = d.getFullYear()
 				const month = d.getMonth() + 1
@@ -139,10 +140,13 @@
 			}
 		},
 		onShow() {
-			this.startTimer()
+			this.startSyncedCountdown()
 		},
 		onHide() {
-			this.stopTimer()
+			if (this.timeoutId) {
+				clearTimeout(this.timeoutId)
+				this.timeoutId = null
+			}
 		},
 		mounted() {
 			uni.getSystemInfo({
@@ -150,30 +154,32 @@
 					this.statusBarHeight = info.statusBarHeight || 44
 				}
 			})
-			this.startTimer()
+			this.startSyncedCountdown()
 		},
 		beforeDestroy() {
-			this.stopTimer()
+			if (this.timeoutId) {
+				clearTimeout(this.timeoutId)
+				this.timeoutId = null
+			}
 		},
 		methods: {
-			startTimer() {
-				if (this.timer) return
-				this.timer = setInterval(() => {
+			startSyncedCountdown() {
+				if (this.timeoutId) clearTimeout(this.timeoutId)
+				const now = new Date()
+				this.now = now
+				if (!this.sendDate || !this.planEnabled) return
+				const delay = 1000 - now.getMilliseconds()
+				this.timeoutId = setTimeout(() => {
 					this.now = new Date()
-				}, 1000)
-			},
-			stopTimer() {
-				if (this.timer) {
-					clearInterval(this.timer)
-					this.timer = null
-				}
+					this.startSyncedCountdown()
+				}, delay)
 			},
 			handleRefresh() {
 				const intervalDays = store.sendPlan.intervalDays || 7
 				const newSendDate = new Date()
 				newSendDate.setDate(newSendDate.getDate() + intervalDays)
 				mutations.updateSendPlan({ sendDate: newSendDate.toISOString() })
-				this.now = new Date()
+				this.startSyncedCountdown()
 				uni.vibrateShort && uni.vibrateShort({ type: 'light' })
 			},
 			goToClues() {

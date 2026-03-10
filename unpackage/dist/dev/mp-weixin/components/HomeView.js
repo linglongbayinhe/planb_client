@@ -7,7 +7,7 @@ const _sfc_main = {
   data() {
     return {
       statusBarHeight: 44,
-      timer: null,
+      timeoutId: null,
       now: /* @__PURE__ */ new Date()
     };
   },
@@ -44,8 +44,10 @@ const _sfc_main = {
       };
     },
     formattedSendDate() {
-      if (!this.sendDate || !this.planEnabled)
+      if (!this.planEnabled)
         return "暂未开启发送计划";
+      if (!this.sendDate)
+        return "点击下方「刷新倒计时」计算";
       const d = this.sendDate;
       const year = d.getFullYear();
       const month = d.getMonth() + 1;
@@ -58,10 +60,13 @@ const _sfc_main = {
     }
   },
   onShow() {
-    this.startTimer();
+    this.startSyncedCountdown();
   },
   onHide() {
-    this.stopTimer();
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
   },
   mounted() {
     common_vendor.index.getSystemInfo({
@@ -69,31 +74,34 @@ const _sfc_main = {
         this.statusBarHeight = info.statusBarHeight || 44;
       }
     });
-    this.startTimer();
+    this.startSyncedCountdown();
   },
   beforeDestroy() {
-    this.stopTimer();
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
   },
   methods: {
-    startTimer() {
-      if (this.timer)
+    startSyncedCountdown() {
+      if (this.timeoutId)
+        clearTimeout(this.timeoutId);
+      const now = /* @__PURE__ */ new Date();
+      this.now = now;
+      if (!this.sendDate || !this.planEnabled)
         return;
-      this.timer = setInterval(() => {
+      const delay = 1e3 - now.getMilliseconds();
+      this.timeoutId = setTimeout(() => {
         this.now = /* @__PURE__ */ new Date();
-      }, 1e3);
-    },
-    stopTimer() {
-      if (this.timer) {
-        clearInterval(this.timer);
-        this.timer = null;
-      }
+        this.startSyncedCountdown();
+      }, delay);
     },
     handleRefresh() {
       const intervalDays = store_index.store.sendPlan.intervalDays || 7;
       const newSendDate = /* @__PURE__ */ new Date();
       newSendDate.setDate(newSendDate.getDate() + intervalDays);
       store_index.mutations.updateSendPlan({ sendDate: newSendDate.toISOString() });
-      this.now = /* @__PURE__ */ new Date();
+      this.startSyncedCountdown();
       common_vendor.index.vibrateShort && common_vendor.index.vibrateShort({ type: "light" });
     },
     goToClues() {

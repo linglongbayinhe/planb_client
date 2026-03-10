@@ -20,15 +20,48 @@ const _sfc_main = {
       showExportSheet: false,
       showDetailSheet: false,
       selectedClue: null,
-      categories: [
-        { key: "all", label: "全部" },
-        { key: "digital", label: "数字资产" },
-        { key: "important", label: "重要物品" },
-        { key: "family", label: "给家人的话" }
-      ]
+      filterScrollLeft: 0,
+      dragState: {
+        active: false,
+        movableIndex: -1,
+        dropIndex: -1
+      },
+      dragOffsetPx: 0,
+      dragReleasePhase: false,
+      _longPressTimer: null,
+      _touchStartX: 0,
+      _lastMoveX: 0,
+      _chipWidth: 90,
+      _categoryLabelMap: {
+        all: "全部",
+        digital: "数字资产",
+        important: "重要物品",
+        family: "给家人的话"
+      }
     };
   },
   computed: {
+    categories() {
+      const order = store_index.store.categoryOrder || ["digital", "important", "family"];
+      return [
+        { key: "all", label: this._categoryLabelMap.all },
+        ...order.map((k) => ({ key: k, label: this._categoryLabelMap[k] || k }))
+      ];
+    },
+    displayCategories() {
+      if (!this.dragState.active || this.dragState.movableIndex < 0) {
+        return this.categories;
+      }
+      const movable = this.categories.slice(1);
+      const from = this.dragState.movableIndex;
+      const to = this.dragState.dropIndex;
+      if (from === to)
+        return this.categories;
+      const arr = movable.slice();
+      const [item] = arr.splice(from, 1);
+      arr.splice(to, 0, item);
+      return [{ key: "all", label: this._categoryLabelMap.all }, ...arr];
+    },
     filteredClues() {
       let list = store_index.store.clues;
       if (this.currentCategory !== "all") {
@@ -41,7 +74,17 @@ const _sfc_main = {
           return vals.includes(q);
         });
       }
-      return list;
+      const order = store_index.store.categoryOrder || ["digital", "important", "family"];
+      const typeOrder = (type) => {
+        const i = order.indexOf(type);
+        return i === -1 ? 999 : i;
+      };
+      return list.slice().sort((a, b) => {
+        const o = typeOrder(a.type) - typeOrder(b.type);
+        if (o !== 0)
+          return o;
+        return (new Date(b.updatedAt) || 0) - (new Date(a.updatedAt) || 0);
+      });
     }
   },
   mounted() {
@@ -52,6 +95,98 @@ const _sfc_main = {
     });
   },
   methods: {
+    getDragChipStyle(i) {
+      if (!this.dragState.active || i !== this.dragState.dropIndex + 1)
+        return {};
+      const px = this.dragOffsetPx || 0;
+      return { transform: "translateX(" + px + "px) scale(1.05)" };
+    },
+    onFilterScroll(e) {
+      this.filterScrollLeft = e.detail.scrollLeft;
+    },
+    onFilterChipClick(i) {
+      if (this.dragState.active)
+        return;
+      this.currentCategory = this.displayCategories[i].key;
+    },
+    onTagTouchStart(e, i) {
+      if (i === 0)
+        return;
+      const movableIndex = i - 1;
+      const touch = e.touches && e.touches[0];
+      if (!touch)
+        return;
+      this._touchStartX = touch.clientX;
+      this._lastMoveX = touch.clientX;
+      if (this._longPressTimer)
+        clearTimeout(this._longPressTimer);
+      this._longPressTimer = setTimeout(() => {
+        this._longPressTimer = null;
+        this.dragOffsetPx = 0;
+        this.dragReleasePhase = false;
+        this._lastMoveX = this._touchStartX;
+        this.dragState = { active: true, movableIndex, dropIndex: movableIndex };
+      }, 320);
+    },
+    onFilterRowTouchMove(e) {
+      if (this.dragState.active) {
+        e.preventDefault && e.preventDefault();
+        e.stopPropagation && e.stopPropagation();
+      }
+    },
+    onTagTouchMove(e, i) {
+      if (this._longPressTimer) {
+        clearTimeout(this._longPressTimer);
+        this._longPressTimer = null;
+      }
+      if (!this.dragState.active)
+        return;
+      if (e.preventDefault)
+        e.preventDefault();
+      if (e.stopPropagation)
+        e.stopPropagation();
+      const touch = e.touches && e.touches[0];
+      if (!touch)
+        return;
+      const clientX = touch.clientX;
+      const delta = clientX - this._lastMoveX;
+      this._lastMoveX = clientX;
+      const chipWidth = this._chipWidth;
+      let newOffset = this.dragOffsetPx + delta;
+      let dropIndex = this.dragState.dropIndex;
+      while (newOffset >= chipWidth / 2 && dropIndex < 2) {
+        newOffset -= chipWidth;
+        dropIndex++;
+      }
+      while (newOffset <= -chipWidth / 2 && dropIndex > 0) {
+        newOffset += chipWidth;
+        dropIndex--;
+      }
+      this.dragOffsetPx = newOffset;
+      if (dropIndex !== this.dragState.dropIndex) {
+        this.dragState = { ...this.dragState, dropIndex };
+      }
+    },
+    onTagTouchEnd() {
+      if (this._longPressTimer) {
+        clearTimeout(this._longPressTimer);
+        this._longPressTimer = null;
+      }
+      if (!this.dragState.active)
+        return;
+      const { movableIndex, dropIndex } = this.dragState;
+      const order = store_index.store.categoryOrder.slice();
+      const [item] = order.splice(movableIndex, 1);
+      order.splice(dropIndex, 0, item);
+      this.dragReleasePhase = true;
+      this.dragOffsetPx = 0;
+      const self = this;
+      setTimeout(function() {
+        store_index.mutations.setCategoryOrder(order);
+        self.dragState = { active: false, movableIndex: -1, dropIndex: -1 };
+        self.dragReleasePhase = false;
+      }, 220);
+    },
     onSearch() {
     },
     clearSearch() {
@@ -143,23 +278,33 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $data.searchText ? {
     f: common_vendor.o((...args) => $options.clearSearch && $options.clearSearch(...args))
   } : {}, {
-    g: common_vendor.f($data.categories, (cat, i, i0) => {
+    g: common_vendor.f($options.displayCategories, (cat, i, i0) => {
       return {
         a: common_vendor.t(cat.label),
-        b: $data.currentCategory === cat.key ? 1 : "",
-        c: i,
-        d: $data.currentCategory === cat.key ? 1 : "",
-        e: common_vendor.o(($event) => $data.currentCategory = cat.key, i)
+        b: $data.currentCategory === cat.key && !$data.dragState.active ? 1 : "",
+        c: cat.key,
+        d: $data.currentCategory === cat.key && !$data.dragState.active ? 1 : "",
+        e: $data.dragState.active && i === $data.dragState.dropIndex + 1 ? 1 : "",
+        f: $data.dragReleasePhase && i === $data.dragState.dropIndex + 1 ? 1 : "",
+        g: common_vendor.s($options.getDragChipStyle(i)),
+        h: common_vendor.o(($event) => $options.onFilterChipClick(i), cat.key),
+        i: common_vendor.o(($event) => $options.onTagTouchStart($event, i), cat.key),
+        j: common_vendor.o(($event) => $options.onTagTouchMove($event, i), cat.key),
+        k: common_vendor.o((...args) => $options.onTagTouchEnd && $options.onTagTouchEnd(...args), cat.key),
+        l: common_vendor.o((...args) => $options.onTagTouchEnd && $options.onTagTouchEnd(...args), cat.key)
       };
     }),
-    h: common_vendor.o((...args) => $options.openExportSheet && $options.openExportSheet(...args)),
-    i: common_vendor.t($options.filteredClues.length),
-    j: $options.filteredClues.length === 0
+    h: common_vendor.o((...args) => $options.onFilterRowTouchMove && $options.onFilterRowTouchMove(...args)),
+    i: $data.filterScrollLeft,
+    j: common_vendor.o((...args) => $options.onFilterScroll && $options.onFilterScroll(...args)),
+    k: common_vendor.o((...args) => $options.openExportSheet && $options.openExportSheet(...args)),
+    l: common_vendor.t($options.filteredClues.length),
+    m: $options.filteredClues.length === 0
   }, $options.filteredClues.length === 0 ? {
-    k: common_vendor.t("\n"),
-    l: common_vendor.o((...args) => $options.openAddSheet && $options.openAddSheet(...args))
+    n: common_vendor.t("\n"),
+    o: common_vendor.o((...args) => $options.openAddSheet && $options.openAddSheet(...args))
   } : {
-    m: common_vendor.f($options.filteredClues, (clue, k0, i0) => {
+    p: common_vendor.f($options.filteredClues, (clue, k0, i0) => {
       return common_vendor.e({
         a: common_vendor.t($options.clueIconEmoji(clue.type)),
         b: $options.clueIconBg(clue.type),
@@ -181,27 +326,27 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       });
     })
   }, {
-    n: $data.showAddSheet
+    q: $data.showAddSheet
   }, $data.showAddSheet ? {
-    o: common_vendor.o(($event) => $data.showAddSheet = false),
-    p: common_vendor.o($options.onClueSaved),
-    q: common_vendor.p({
+    r: common_vendor.o(($event) => $data.showAddSheet = false),
+    s: common_vendor.o($options.onClueSaved),
+    t: common_vendor.p({
       ["initial-type"]: $data.currentCategory !== "all" ? $data.currentCategory : "important"
     })
   } : {}, {
-    r: $data.showExportSheet
+    v: $data.showExportSheet
   }, $data.showExportSheet ? {
-    s: common_vendor.o(($event) => $data.showExportSheet = false)
+    w: common_vendor.o(($event) => $data.showExportSheet = false)
   } : {}, {
-    t: $data.showDetailSheet && $data.selectedClue
+    x: $data.showDetailSheet && $data.selectedClue
   }, $data.showDetailSheet && $data.selectedClue ? {
-    v: common_vendor.o(($event) => {
+    y: common_vendor.o(($event) => {
       $data.showDetailSheet = false;
       $data.selectedClue = null;
     }),
-    w: common_vendor.o($options.onClueUpdated),
-    x: common_vendor.o($options.onClueDeleted),
-    y: common_vendor.p({
+    z: common_vendor.o($options.onClueUpdated),
+    A: common_vendor.o($options.onClueDeleted),
+    B: common_vendor.p({
       clue: $data.selectedClue
     })
   } : {});

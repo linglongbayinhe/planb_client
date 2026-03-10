@@ -1,6 +1,6 @@
 <template>
 	<view class="sheet-overlay" @click.self="onCancel">
-		<view class="sheet-container">
+		<view class="sheet-container" @click.stop>
 			<!-- 拖拽指示器 -->
 			<view class="drag-handle"></view>
 
@@ -24,103 +24,140 @@
 						:key="t.key"
 						class="type-chip"
 						:class="{ 'type-chip-active': selectedType === t.key }"
-						@click="selectedType = t.key"
+						@click="onTypeChange(t.key)"
 					>
 						<text class="type-chip-text" :class="{ 'type-chip-text-active': selectedType === t.key }">{{ t.label }}</text>
 					</view>
 				</view>
+				<text v-if="validationError" class="validation-error">{{ validationError }}</text>
 
+				<!-- 表单区域：类型切换时先隐藏再渐显，避免 placeholder 首帧竖排闪烁 -->
+				<view
+					class="form-body"
+					:class="{
+						'form-body-visible': formContentVisible,
+						'form-body-animate': formBodyAnimate
+					}"
+				>
 				<!-- 重要物品表单 -->
-				<view v-if="selectedType === 'important'" class="form-card card">
+				<view v-show="selectedType === 'important'" class="form-card card form-panel-h">
 					<view class="form-row">
 						<text class="form-label required-label">名称</text>
-						<input class="form-input" v-model="form.name" placeholder="输入名称..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.name" placeholder="输入名称..." placeholder-class="form-placeholder-h" @input="validationError = ''" />
+						</view>
 					</view>
 					<view class="form-divider"></view>
 					<view class="form-row">
 						<text class="form-label">存放</text>
-						<input class="form-input" v-model="form.location" placeholder="输入存放..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.location" placeholder="输入存放..." placeholder-class="form-placeholder-h" />
+						</view>
 					</view>
 					<view class="form-divider"></view>
 					<view class="form-row">
 						<text class="form-label">关联</text>
-						<input class="form-input" v-model="form.relation" placeholder="输入关联..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.relation" placeholder="输入关联..." placeholder-class="form-placeholder-h" />
+						</view>
 					</view>
 				</view>
 
-				<view v-if="selectedType === 'important'" class="form-card card note-card">
+				<view v-show="selectedType === 'important'" class="form-card card note-card form-panel-h">
 					<text class="form-label-top">备注与引导</text>
-					<textarea
-						class="form-textarea"
-						v-model="form.note"
-						placeholder="补充具体步骤..."
-						placeholder-class="form-placeholder"
-						:auto-height="true"
-						:show-confirm-bar="false"
-					/>
+					<view class="form-textarea-wrap">
+						<textarea
+							class="form-textarea"
+							style="writing-mode: horizontal-tb;"
+							v-model="form.note"
+							placeholder="补充具体步骤..."
+							placeholder-style="writing-mode:horizontal-tb;color:#C7C7CC;font-size:15px;line-height:1.5;"
+							:auto-height="true"
+							:show-confirm-bar="false"
+						/>
+					</view>
 				</view>
 
 				<!-- 数字资产表单 -->
-				<view v-if="selectedType === 'digital'" class="form-card card">
+				<view v-show="selectedType === 'digital'" class="form-card card form-panel-h">
 					<view class="form-row">
 						<text class="form-label required-label">平台</text>
-						<input class="form-input" v-model="form.platform" placeholder="输入平台名称..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.platform" placeholder="输入平台名称..." placeholder-class="form-placeholder-h" @input="validationError = ''" />
+						</view>
 					</view>
 					<view class="form-divider"></view>
 					<view class="form-row">
 						<text class="form-label">账号</text>
-						<input class="form-input" v-model="form.account" placeholder="输入账号..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.account" placeholder="输入账号..." placeholder-class="form-placeholder-h" />
+						</view>
 					</view>
 					<view class="form-divider"></view>
 					<view class="form-row">
 						<text class="form-label">关联</text>
-						<input class="form-input" v-model="form.relation" placeholder="输入关联..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.relation" placeholder="输入关联..." placeholder-class="form-placeholder-h" />
+						</view>
 					</view>
 				</view>
 
-				<view v-if="selectedType === 'digital'" class="form-card card note-card">
+				<view v-show="selectedType === 'digital'" class="form-card card note-card form-panel-h">
 					<text class="form-label-top">备注与引导</text>
-					<textarea
-						class="form-textarea"
-						v-model="form.note"
-						placeholder="补充具体步骤..."
-						placeholder-class="form-placeholder"
-						:auto-height="true"
-						:show-confirm-bar="false"
-					/>
+					<view class="form-textarea-wrap">
+						<textarea
+							class="form-textarea"
+							style="writing-mode: horizontal-tb;"
+							v-model="form.note"
+							placeholder="补充具体步骤..."
+							placeholder-style="writing-mode:horizontal-tb;color:#C7C7CC;font-size:15px;line-height:1.5;"
+							:auto-height="true"
+							:show-confirm-bar="false"
+						/>
+					</view>
 				</view>
 
 				<!-- 给家人的话表单 -->
-				<view v-if="selectedType === 'family'" class="form-card card">
+				<view v-show="selectedType === 'family'" class="form-card card form-panel-h">
 					<view class="form-row">
 						<text class="form-label required-label">标题</text>
-						<input class="form-input" v-model="form.title" placeholder="输入标题..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.title" placeholder="输入标题..." placeholder-class="form-placeholder-h" @input="validationError = ''" />
+						</view>
 					</view>
 					<view class="form-divider"></view>
 					<view class="form-row">
 						<text class="form-label">对象</text>
-						<input class="form-input" v-model="form.target" placeholder="写给谁..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.target" placeholder="写给谁..." placeholder-class="form-placeholder-h" />
+						</view>
 					</view>
 					<view class="form-divider"></view>
 					<view class="form-row">
 						<text class="form-label">背景</text>
-						<input class="form-input" v-model="form.background" placeholder="背景说明..." placeholder-class="form-placeholder" />
+						<view class="form-input-wrap">
+							<input class="form-input" v-model="form.background" placeholder="背景说明..." placeholder-class="form-placeholder-h" />
+						</view>
 					</view>
 				</view>
 
-				<view v-if="selectedType === 'family'" class="form-card card note-card">
+				<view v-show="selectedType === 'family'" class="form-card card note-card form-panel-h">
 					<text class="form-label-top">正文</text>
-					<textarea
-						class="form-textarea"
-						v-model="form.note"
-						placeholder="写下想说的话..."
-						placeholder-class="form-placeholder"
-						:auto-height="true"
-						:show-confirm-bar="false"
-					/>
+					<view class="form-textarea-wrap">
+						<textarea
+							class="form-textarea"
+							style="writing-mode: horizontal-tb;"
+							v-model="form.note"
+							placeholder="写下想说的话..."
+							placeholder-style="writing-mode:horizontal-tb;color:#C7C7CC;font-size:15px;line-height:1.5;"
+							:auto-height="true"
+							:show-confirm-bar="false"
+						/>
+					</view>
 				</view>
 
 				<view style="height: 40px;"></view>
+				</view>
 			</scroll-view>
 		</view>
 	</view>
@@ -141,6 +178,9 @@
 		data() {
 			return {
 				selectedType: this.initialType || 'important',
+				validationError: '',
+				formContentVisible: true,
+				formBodyAnimate: false,
 				form: {
 					name: '', location: '', relation: '', note: '',
 					platform: '', account: '',
@@ -165,8 +205,35 @@
 			onCancel() {
 				this.$emit('close')
 			},
+			onTypeChange(key) {
+				if (key === this.selectedType) return
+				this.validationError = ''
+				this.formContentVisible = false
+				this.formBodyAnimate = false
+				this.selectedType = key
+				this.resetForm()
+				this.$nextTick(() => {
+					setTimeout(() => {
+						this.formContentVisible = true
+						this.formBodyAnimate = true
+					}, 40)
+				})
+			},
+			resetForm() {
+				this.form = {
+					name: '', location: '', relation: '', note: '',
+					platform: '', account: '',
+					title: '', target: '', background: ''
+				}
+			},
 			onSave() {
-				if (!this.canSave) return
+				if (!this.canSave) {
+					if (this.selectedType === 'important') this.validationError = '请填写名称'
+					else if (this.selectedType === 'digital') this.validationError = '请填写平台'
+					else if (this.selectedType === 'family') this.validationError = '请填写标题'
+					return
+				}
+				this.validationError = ''
 				const clue = { type: this.selectedType }
 				if (this.selectedType === 'important') {
 					Object.assign(clue, {
@@ -282,6 +349,23 @@
 		font-weight: 500;
 	}
 
+	.validation-error {
+		display: block;
+		font-size: 13px;
+		color: #FF3B30;
+		padding: 4px 16px 12px;
+	}
+
+	.form-body {
+		opacity: 0;
+	}
+	.form-body.form-body-visible {
+		opacity: 1;
+	}
+	.form-body.form-body-animate {
+		transition: opacity 0.18s ease-out;
+	}
+
 	.type-selector {
 		display: flex;
 		flex-direction: row;
@@ -338,17 +422,45 @@
 		color: #1C1C1E;
 	}
 
-	.form-input {
+	.form-panel-h {
+		direction: ltr;
+		writing-mode: horizontal-tb;
+	}
+
+	.form-input-wrap {
 		flex: 1;
+		direction: ltr;
+		writing-mode: horizontal-tb;
+		min-width: 0;
+	}
+
+	.form-textarea-wrap {
+		width: 100%;
+		direction: ltr;
+		writing-mode: horizontal-tb;
+	}
+
+	.form-input {
+		width: 100%;
 		font-size: 15px;
 		color: #1C1C1E;
 		background: transparent;
 		border: none;
 		outline: none;
+		direction: ltr;
+		writing-mode: horizontal-tb;
 	}
 
 	.form-placeholder {
 		color: #C7C7CC;
+		direction: ltr;
+		writing-mode: horizontal-tb;
+	}
+
+	.form-placeholder-h {
+		color: #C7C7CC !important;
+		direction: ltr !important;
+		writing-mode: horizontal-tb !important;
 	}
 
 	.form-divider {
@@ -373,5 +485,7 @@
 		border: none;
 		outline: none;
 		line-height: 1.5;
+		direction: ltr;
+		writing-mode: horizontal-tb;
 	}
 </style>

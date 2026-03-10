@@ -25,12 +25,14 @@ function loadStr(key, fallback) {
     return fallback;
   }
 }
+const defaultCategoryOrder = ["digital", "important", "family"];
 const store = common_vendor.reactive({
   clues: loadJSON("clues", []),
   sendPlan: Object.assign({}, defaultPlan, loadJSON("plan", {})),
   currentUser: loadJSON("user", null),
   theme: loadStr("theme", "minimal"),
-  language: loadStr("language", "zh-CN")
+  language: loadStr("language", "zh-CN"),
+  categoryOrder: loadJSON("clueCategoryOrder", defaultCategoryOrder)
 });
 const mutations = {
   addClue(clue) {
@@ -73,13 +75,19 @@ const mutations = {
     store.language = lang;
     common_vendor.index.setStorageSync("language", lang);
   },
+  setCategoryOrder(order) {
+    store.categoryOrder = order;
+    common_vendor.index.setStorageSync("clueCategoryOrder", JSON.stringify(order));
+  },
   resetAll() {
     store.clues = [];
     store.sendPlan = Object.assign({}, defaultPlan);
     store.currentUser = null;
+    store.categoryOrder = defaultCategoryOrder;
     common_vendor.index.removeStorageSync("clues");
     common_vendor.index.removeStorageSync("plan");
     common_vendor.index.removeStorageSync("user");
+    common_vendor.index.removeStorageSync("clueCategoryOrder");
   }
 };
 exports.mutations = mutations;
