@@ -85,7 +85,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   } : {}, {
     p: !$options.canExport ? 1 : "",
     q: common_vendor.o((...args) => $options.doExport && $options.doExport(...args)),
-    r: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
+    r: common_vendor.o(() => {
+    }),
+    s: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-25171861"]]);

@@ -109,7 +109,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     K: $data.form.note,
     L: common_vendor.o(($event) => $data.form.note = $event.detail.value)
   } : {}, {
-    M: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args))
+    M: common_vendor.o(() => {
+    }),
+    N: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args))
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-dd9903cc"]]);

@@ -96,13 +96,39 @@ const _sfc_main = {
         this.startSyncedCountdown();
       }, delay);
     },
-    handleRefresh() {
+    async handleRefresh() {
+      if (!this.planEnabled) {
+        common_vendor.index.showToast({ title: "请先开启发送计划", icon: "none" });
+        return;
+      }
       const intervalDays = store_index.store.sendPlan.intervalDays || 7;
       const newSendDate = /* @__PURE__ */ new Date();
       newSendDate.setDate(newSendDate.getDate() + intervalDays);
-      store_index.mutations.updateSendPlan({ sendDate: newSendDate.toISOString() });
+      const newSendDateISO = newSendDate.toISOString();
+      const newSendDateMs = newSendDate.getTime();
+      store_index.mutations.updateSendPlan({ sendDate: newSendDateISO });
       this.startSyncedCountdown();
       common_vendor.index.vibrateShort && common_vendor.index.vibrateShort({ type: "light" });
+      const uid = store_index.store.currentUser && (store_index.store.currentUser._id || store_index.store.currentUser.uid);
+      if (!uid)
+        return;
+      try {
+        const obj = common_vendor.tr.importObject("send_time");
+        const res = await obj.updateSendTime(newSendDateMs, uid);
+        if (res && res.errCode) {
+          common_vendor.index.showToast({
+            title: res.errMsg || "云端同步失败，已保存到本地",
+            icon: "none",
+            duration: 2e3
+          });
+        }
+      } catch (e) {
+        common_vendor.index.showToast({
+          title: e && e.message || "云端同步失败，已保存到本地",
+          icon: "none",
+          duration: 2e3
+        });
+      }
     },
     goToClues() {
       common_vendor.index.vibrateShort && common_vendor.index.vibrateShort({ type: "light" });
@@ -124,9 +150,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     f: common_vendor.t($options.timeStr.mm),
     g: common_vendor.t($options.timeStr.ss),
     h: common_vendor.t($options.formattedSendDate),
-    i: common_vendor.o((...args) => $options.handleRefresh && $options.handleRefresh(...args)),
-    j: common_vendor.o((...args) => $options.goToClues && $options.goToClues(...args)),
-    k: common_vendor.o((...args) => $options.goToSend && $options.goToSend(...args))
+    i: !$options.planEnabled ? 1 : "",
+    j: common_vendor.o((...args) => $options.handleRefresh && $options.handleRefresh(...args)),
+    k: common_vendor.o((...args) => $options.goToClues && $options.goToClues(...args)),
+    l: common_vendor.o((...args) => $options.goToSend && $options.goToSend(...args))
   };
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-f29a63c4"]]);

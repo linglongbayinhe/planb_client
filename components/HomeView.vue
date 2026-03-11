@@ -40,10 +40,14 @@
 
 			<view class="send-date-row">
 				<text class="send-date-icon">📅</text>
-				<text class="send-date-text">预计日期：{{ formattedSendDate }}</text>
+				<text class="send-date-text">预计发送日期：{{ formattedSendDate }}</text>
 			</view>
 
-			<view class="refresh-btn" @click="handleRefresh">
+			<view
+				class="refresh-btn"
+				:class="{ 'refresh-btn-disabled': !planEnabled }"
+				@click="handleRefresh"
+			>
 				<text class="refresh-icon">↺</text>
 				<text class="refresh-text">刷新倒计时</text>
 			</view>
@@ -174,13 +178,44 @@
 					this.startSyncedCountdown()
 				}, delay)
 			},
-			handleRefresh() {
+			async handleRefresh() {
+				if (!this.planEnabled) {
+					uni.showToast({ title: '请先开启发送计划', icon: 'none' })
+					return
+				}
 				const intervalDays = store.sendPlan.intervalDays || 7
 				const newSendDate = new Date()
 				newSendDate.setDate(newSendDate.getDate() + intervalDays)
-				mutations.updateSendPlan({ sendDate: newSendDate.toISOString() })
+				const newSendDateISO = newSendDate.toISOString()
+				const newSendDateMs = newSendDate.getTime()
+
+				// 1. 先更新本地 store，保证 UI 立即响应
+				mutations.updateSendPlan({ sendDate: newSendDateISO })
 				this.startSyncedCountdown()
 				uni.vibrateShort && uni.vibrateShort({ type: 'light' })
+
+				// 2. 已登录时，同步到云数据库 users 表的 send_date 字段
+				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
+				if (!uid) return  // 未登录则只保存到本地，不上报云端
+
+				try {
+					const obj = uniCloud.importObject('send_time')
+					const res = await obj.updateSendTime(newSendDateMs, uid)
+					if (res && res.errCode) {
+						// 静默失败：toast 提示但不回滚本地数据
+						uni.showToast({
+							title: res.errMsg || '云端同步失败，已保存到本地',
+							icon: 'none',
+							duration: 2000
+						})
+					}
+				} catch (e) {
+					uni.showToast({
+						title: (e && e.message) || '云端同步失败，已保存到本地',
+						icon: 'none',
+						duration: 2000
+					})
+				}
 			},
 			goToClues() {
 				uni.vibrateShort && uni.vibrateShort({ type: 'light' })
@@ -348,6 +383,11 @@
 		align-items: center;
 		justify-content: center;
 		gap: 8px;
+	}
+
+	.refresh-btn-disabled {
+		background-color: #C7C7CC;
+		opacity: 0.8;
 	}
 
 	.refresh-icon {

@@ -1,6 +1,6 @@
 <template>
-	<view class="sheet-overlay" @click.self="onClose">
-		<view class="sheet-container">
+	<view class="sheet-overlay" @tap.self="onClose">
+		<view class="sheet-container" @tap.stop>
 			<view class="drag-handle"></view>
 
 			<!-- 导航栏 -->

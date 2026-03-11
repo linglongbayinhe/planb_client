@@ -1,0 +1,7 @@
+{
+  "name": "send_phone",
+  "dependencies": {},
+  "extensions": {
+    "uni-cloud-jql": {}
+  }
+}

@@ -14,7 +14,7 @@
 					<text class="nav-btn-text done" :class="{ 'done-disabled': !canSave }">完成</text>
 				</view>
 			</view>
-
+			
 			<!-- 类型选择 -->
 			<scroll-view class="sheet-scroll" scroll-y>
 				<text class="form-section-title">类型</text>

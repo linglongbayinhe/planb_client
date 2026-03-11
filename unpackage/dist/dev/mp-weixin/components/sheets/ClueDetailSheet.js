@@ -153,15 +153,17 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   } : {}) : {}, {
     L: common_vendor.t($options.formattedUpdatedAt),
     M: common_vendor.o((...args) => $options.confirmDelete && $options.confirmDelete(...args)),
-    N: $data.showEditSheet
+    N: common_vendor.o(() => {
+    }),
+    O: $data.showEditSheet
   }, $data.showEditSheet ? {
-    O: common_vendor.o(($event) => $data.showEditSheet = false),
-    P: common_vendor.o($options.onEditSaved),
-    Q: common_vendor.p({
+    P: common_vendor.o(($event) => $data.showEditSheet = false),
+    Q: common_vendor.o($options.onEditSaved),
+    R: common_vendor.p({
       clue: $data.currentClue
     })
   } : {}, {
-    R: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
+    S: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-866cb5f9"]]);

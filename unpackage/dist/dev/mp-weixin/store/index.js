@@ -66,6 +66,9 @@ const mutations = {
   logout() {
     store.currentUser = null;
     common_vendor.index.removeStorageSync("user");
+    common_vendor.index.removeStorageSync("uni_id_token");
+    common_vendor.index.removeStorageSync("uni_id_token_expired");
+    common_vendor.index.removeStorageSync("users");
   },
   setTheme(theme) {
     store.theme = theme;
@@ -88,6 +91,9 @@ const mutations = {
     common_vendor.index.removeStorageSync("plan");
     common_vendor.index.removeStorageSync("user");
     common_vendor.index.removeStorageSync("clueCategoryOrder");
+    common_vendor.index.removeStorageSync("uni_id_token");
+    common_vendor.index.removeStorageSync("uni_id_token_expired");
+    common_vendor.index.removeStorageSync("users");
   }
 };
 exports.mutations = mutations;

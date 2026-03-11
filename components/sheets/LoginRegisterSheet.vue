@@ -1,6 +1,6 @@
 <template>
-	<view class="sheet-overlay" @click.self="onClose">
-		<view class="sheet-container">
+	<view class="sheet-overlay" @tap.self="onClose">
+		<view class="sheet-container" @tap.stop>
 			<view class="drag-handle"></view>
 
 			<!-- 导航栏 -->
@@ -72,6 +72,9 @@
 								placeholder-class="form-placeholder"
 							/>
 						</view>
+						<view v-if="confirmPasswordMismatch" class="field-error-row">
+							<text class="field-error-text">密码与确认密码不一致</text>
+						</view>
 						<view class="form-divider"></view>
 						<view class="form-row">
 							<text class="form-label">昵称</text>
@@ -97,7 +100,7 @@
 				</view>
 
 				<!-- 底部说明 -->
-				<text class="bottom-note">当前为本地账户，数据仅保存在本设备。</text>
+				<text class="bottom-note">注册/登录后账户与发送设置将同步至云端。</text>
 
 				<view style="height: 40px;"></view>
 			</scroll-view>
@@ -128,6 +131,10 @@
 					return this.password.length >= 6 && this.password === this.confirmPassword
 				}
 				return true
+			},
+			confirmPasswordMismatch() {
+				if (this.mode !== 'register') return false
+				return this.confirmPassword.length > 0 && this.password !== this.confirmPassword
 			}
 		},
 		methods: {
@@ -136,11 +143,14 @@
 			},
 			clearError() {
 				this.errorMsg = ''
+				if (this.mode === 'login') {
+					this.confirmPassword = ''
+				}
 			},
 			isValidEmail(email) {
 				return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 			},
-			onSubmit() {
+			async onSubmit() {
 				if (!this.canSubmit) return
 				this.errorMsg = ''
 
@@ -150,44 +160,64 @@
 				}
 
 				if (this.mode === 'login') {
-					const users = this.getStoredUsers()
-					const user = users.find(u => u.email === this.email)
-					if (!user) {
-						this.errorMsg = '该邮箱尚未注册'
-						return
-					}
-					if (user.password !== this.password) {
-						this.errorMsg = '密码不正确'
-						return
-					}
-					mutations.setUser({ email: user.email, nickname: user.nickname })
-					this.$emit('close')
+					await this.doLogin()
 				} else {
 					if (this.password.length < 6) {
 						this.errorMsg = '密码至少需要6位'
 						return
 					}
 					if (this.password !== this.confirmPassword) {
-						this.errorMsg = '两次密码不一致'
+						this.errorMsg = '密码与确认密码不一致'
 						return
 					}
-					const users = this.getStoredUsers()
-					if (users.find(u => u.email === this.email)) {
-						this.errorMsg = '该邮箱已注册'
-						return
-					}
-					const newUser = {
-						email: this.email,
-						password: this.password,
-						nickname: this.nickname
-					}
-					users.push(newUser)
-					try {
-						uni.setStorageSync('users', JSON.stringify(users))
-					} catch (e) {}
-					mutations.setUser({ email: newUser.email, nickname: newUser.nickname })
-					this.$emit('close')
+					await this.doRegister()
 				}
+			},
+			async doLogin() {
+				uni.showLoading({ title: '登录中，请稍后...', mask: true })
+				try {
+					const obj = uniCloud.importObject('register', { customUI: true })
+					const res = await obj.login(this.email.trim(), this.password)
+					if (res.errCode === 0) {
+						this.saveTokenAndUser(res.newToken, res.userInfo)
+						this.$emit('close')
+						// 登录成功后异步记录登录时间，不触发默认「加载中...」
+						const uid = res.userInfo && res.userInfo._id
+						if (uid) {
+							uniCloud.importObject('login', { customUI: true }).recordLoginTime(uid).catch(() => {})
+						}
+					} else {
+						this.errorMsg = res.errMsg || (res.errCode === 'USER_NOT_FOUND' ? '该邮箱尚未注册' : '登录失败')
+					}
+				} catch (e) {
+					this.errorMsg = e.message || '网络异常，请重试'
+				} finally {
+					uni.hideLoading()
+				}
+			},
+			async doRegister() {
+				try {
+					const obj = uniCloud.importObject('register')
+					const res = await obj.registerUser(this.email.trim(), this.password, this.nickname)
+					if (res.errCode === 0) {
+						this.saveTokenAndUser(res.newToken, res.userInfo)
+						this.$emit('close')
+					} else {
+						this.errorMsg = res.errMsg || (res.errCode === 'EMAIL_EXISTS' ? '该邮箱已注册' : '注册失败')
+					}
+				} catch (e) {
+					this.errorMsg = e.message || '网络异常，请重试'
+				}
+			},
+			saveTokenAndUser(newToken, userInfo) {
+				if (newToken && newToken.token) {
+					uni.setStorageSync('uni_id_token', newToken.token)
+					if (newToken.tokenExpired != null) {
+						uni.setStorageSync('uni_id_token_expired', newToken.tokenExpired)
+					}
+				}
+				const u = userInfo || {}
+				mutations.setUser({ _id: u._id, email: u.email || this.email, nickname: u.nickname || this.nickname })
 			},
 			getStoredUsers() {
 				try {
@@ -335,6 +365,16 @@
 		height: 0.5px;
 		background-color: #E5E5EA;
 		margin: 0 16px;
+	}
+
+	.field-error-row {
+		padding: 4px 16px 8px;
+		padding-left: calc(70px + 16px + 12px);
+	}
+
+	.field-error-text {
+		font-size: 13px;
+		color: #C0392B;
 	}
 
 	.submit-btn-wrap {

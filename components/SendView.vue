@@ -216,6 +216,10 @@
 			}
 		},
 		computed: {
+			currentUid() {
+				const u = store.currentUser
+				return (u && (u._id || u.uid)) || ''
+			},
 			planEnabled() {
 				return store.sendPlan.enabled
 			},
@@ -257,6 +261,10 @@
 		},
 		methods: {
 			addEmail() {
+				if (!this.currentUid) {
+					uni.showToast({ title: '请先登录', icon: 'none' })
+					return
+				}
 				const email = this.emailInput.trim().toLowerCase()
 				if (!email) return
 				const emailReg = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
@@ -271,8 +279,13 @@
 				}
 				mutations.updateSendPlan({ emails: [...this.emails, this.emailInput.trim()] })
 				this.emailInput = ''
+				this.syncSendEmailToCloud(email, true)
 			},
 			addPhone() {
+				if (!this.currentUid) {
+					uni.showToast({ title: '请先登录', icon: 'none' })
+					return
+				}
 				const phone = this.phoneInput.trim()
 				if (!phone) return
 				const phoneReg = /^1[3-9]\d{9}$/
@@ -287,16 +300,55 @@
 				}
 				mutations.updateSendPlan({ phones: [...this.phones, phone] })
 				this.phoneInput = ''
+				this.syncSendPhoneToCloud(phone, true)
 			},
 			removeEmail(i) {
+				if (!this.currentUid) {
+					uni.showToast({ title: '请先登录', icon: 'none' })
+					return
+				}
+				const removedEmail = this.emails[i]
 				const list = [...this.emails]
 				list.splice(i, 1)
 				mutations.updateSendPlan({ emails: list })
+				if (removedEmail) this.syncSendEmailToCloud(removedEmail, false)
 			},
 			removePhone(i) {
+				if (!this.currentUid) {
+					uni.showToast({ title: '请先登录', icon: 'none' })
+					return
+				}
+				const removedPhone = this.phones[i]
 				const list = [...this.phones]
 				list.splice(i, 1)
 				mutations.updateSendPlan({ phones: list })
+				if (removedPhone) this.syncSendPhoneToCloud(removedPhone, false)
+			},
+			async syncSendEmailToCloud(email, isNew) {
+				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
+				if (!uid) return
+				try {
+					const obj = uniCloud.importObject('send_email')
+					const res = await obj.updateSendEmail(email, isNew, uid)
+					if (res && res.errCode && res.errCode !== 'UID_REQUIRED') {
+						uni.showToast({ title: res.errMsg || '云端同步失败', icon: 'none', duration: 2000 })
+					}
+				} catch (e) {
+					uni.showToast({ title: (e && e.message) || '云端同步失败', icon: 'none', duration: 2000 })
+				}
+			},
+			async syncSendPhoneToCloud(phone, isNew) {
+				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
+				if (!uid) return
+				try {
+					const obj = uniCloud.importObject('send_phone')
+					const res = await obj.updateSendPhone(phone, isNew, uid)
+					if (res && res.errCode && res.errCode !== 'UID_REQUIRED') {
+						uni.showToast({ title: res.errMsg || '云端同步失败', icon: 'none', duration: 2000 })
+					}
+				} catch (e) {
+					uni.showToast({ title: (e && e.message) || '云端同步失败', icon: 'none', duration: 2000 })
+				}
 			},
 			saveDisplayName() {
 				mutations.updateSendPlan({ displayName: this.displayName })
@@ -314,11 +366,31 @@
 			onSliderChanging(e) {
 				mutations.updateSendPlan({ intervalDays: e.detail.value })
 			},
-			togglePlan() {
+			async togglePlan() {
+				const newEnabled = !this.planEnabled
 				if (this.planEnabled) {
 					mutations.updateSendPlan({ enabled: false })
 				} else {
 					mutations.updateSendPlan({ enabled: true })
+				}
+				let uid = store.currentUser && (store.currentUser.uid || store.currentUser._id)
+				if (!uid && typeof uniCloud !== 'undefined' && typeof uniCloud.getCurrentUserInfo === 'function') {
+					try {
+						const u = await uniCloud.getCurrentUserInfo()
+						uid = u && (u.uid || u._id)
+					} catch (e) {}
+				}
+				try {
+					const obj = uniCloud.importObject('set_enable_sending')
+					const res = await obj.setEnableSending(newEnabled, uid || undefined)
+					if (res && res.errCode) {
+						const msg = res.errCode === 'UID_REQUIRED'
+							? '请先登录以同步到云端'
+							: (res.errMsg || '同步失败')
+						uni.showToast({ title: msg, icon: 'none' })
+					}
+				} catch (e) {
+					uni.showToast({ title: (e && e.message) || '同步到云端失败', icon: 'none' })
 				}
 			}
 		}

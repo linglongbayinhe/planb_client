@@ -14,6 +14,10 @@ const _sfc_main = {
     };
   },
   computed: {
+    currentUid() {
+      const u = store_index.store.currentUser;
+      return u && (u._id || u.uid) || "";
+    },
     planEnabled() {
       return store_index.store.sendPlan.enabled;
     },
@@ -72,6 +76,10 @@ const _sfc_main = {
   },
   methods: {
     addEmail() {
+      if (!this.currentUid) {
+        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+        return;
+      }
       const email = this.emailInput.trim().toLowerCase();
       if (!email)
         return;
@@ -88,8 +96,13 @@ const _sfc_main = {
       }
       store_index.mutations.updateSendPlan({ emails: [...this.emails, this.emailInput.trim()] });
       this.emailInput = "";
+      this.syncSendEmailToCloud(email, true);
     },
     addPhone() {
+      if (!this.currentUid) {
+        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+        return;
+      }
       const phone = this.phoneInput.trim();
       if (!phone)
         return;
@@ -106,16 +119,59 @@ const _sfc_main = {
       }
       store_index.mutations.updateSendPlan({ phones: [...this.phones, phone] });
       this.phoneInput = "";
+      this.syncSendPhoneToCloud(phone, true);
     },
     removeEmail(i) {
+      if (!this.currentUid) {
+        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+        return;
+      }
+      const removedEmail = this.emails[i];
       const list = [...this.emails];
       list.splice(i, 1);
       store_index.mutations.updateSendPlan({ emails: list });
+      if (removedEmail)
+        this.syncSendEmailToCloud(removedEmail, false);
     },
     removePhone(i) {
+      if (!this.currentUid) {
+        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+        return;
+      }
+      const removedPhone = this.phones[i];
       const list = [...this.phones];
       list.splice(i, 1);
       store_index.mutations.updateSendPlan({ phones: list });
+      if (removedPhone)
+        this.syncSendPhoneToCloud(removedPhone, false);
+    },
+    async syncSendEmailToCloud(email, isNew) {
+      const uid = store_index.store.currentUser && (store_index.store.currentUser._id || store_index.store.currentUser.uid);
+      if (!uid)
+        return;
+      try {
+        const obj = common_vendor.tr.importObject("send_email");
+        const res = await obj.updateSendEmail(email, isNew, uid);
+        if (res && res.errCode && res.errCode !== "UID_REQUIRED") {
+          common_vendor.index.showToast({ title: res.errMsg || "云端同步失败", icon: "none", duration: 2e3 });
+        }
+      } catch (e) {
+        common_vendor.index.showToast({ title: e && e.message || "云端同步失败", icon: "none", duration: 2e3 });
+      }
+    },
+    async syncSendPhoneToCloud(phone, isNew) {
+      const uid = store_index.store.currentUser && (store_index.store.currentUser._id || store_index.store.currentUser.uid);
+      if (!uid)
+        return;
+      try {
+        const obj = common_vendor.tr.importObject("send_phone");
+        const res = await obj.updateSendPhone(phone, isNew, uid);
+        if (res && res.errCode && res.errCode !== "UID_REQUIRED") {
+          common_vendor.index.showToast({ title: res.errMsg || "云端同步失败", icon: "none", duration: 2e3 });
+        }
+      } catch (e) {
+        common_vendor.index.showToast({ title: e && e.message || "云端同步失败", icon: "none", duration: 2e3 });
+      }
     },
     saveDisplayName() {
       store_index.mutations.updateSendPlan({ displayName: this.displayName });
@@ -133,11 +189,30 @@ const _sfc_main = {
     onSliderChanging(e) {
       store_index.mutations.updateSendPlan({ intervalDays: e.detail.value });
     },
-    togglePlan() {
+    async togglePlan() {
+      const newEnabled = !this.planEnabled;
       if (this.planEnabled) {
         store_index.mutations.updateSendPlan({ enabled: false });
       } else {
         store_index.mutations.updateSendPlan({ enabled: true });
+      }
+      let uid = store_index.store.currentUser && (store_index.store.currentUser.uid || store_index.store.currentUser._id);
+      if (!uid && typeof common_vendor.tr !== "undefined" && typeof common_vendor.tr.getCurrentUserInfo === "function") {
+        try {
+          const u = await common_vendor.tr.getCurrentUserInfo();
+          uid = u && (u.uid || u._id);
+        } catch (e) {
+        }
+      }
+      try {
+        const obj = common_vendor.tr.importObject("set_enable_sending");
+        const res = await obj.setEnableSending(newEnabled, uid || void 0);
+        if (res && res.errCode) {
+          const msg = res.errCode === "UID_REQUIRED" ? "请先登录以同步到云端" : res.errMsg || "同步失败";
+          common_vendor.index.showToast({ title: msg, icon: "none" });
+        }
+      } catch (e) {
+        common_vendor.index.showToast({ title: e && e.message || "同步到云端失败", icon: "none" });
       }
     }
   }

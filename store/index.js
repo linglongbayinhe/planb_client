@@ -76,6 +76,9 @@ export const mutations = {
 	logout() {
 		store.currentUser = null
 		uni.removeStorageSync('user')
+		uni.removeStorageSync('uni_id_token')
+		uni.removeStorageSync('uni_id_token_expired')
+		uni.removeStorageSync('users')
 	},
 
 	setTheme(theme) {
@@ -102,5 +105,8 @@ export const mutations = {
 		uni.removeStorageSync('plan')
 		uni.removeStorageSync('user')
 		uni.removeStorageSync('clueCategoryOrder')
+		uni.removeStorageSync('uni_id_token')
+		uni.removeStorageSync('uni_id_token_expired')
+		uni.removeStorageSync('users')
 	}
 }

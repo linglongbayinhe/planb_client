@@ -116,6 +116,14 @@
 		background-color: #E5E5EA;
 		margin: 0 16px;
 }
+.field-error-row.data-v-5a44606c {
+		padding: 4px 16px 8px;
+		padding-left: calc(70px + 16px + 12px);
+}
+.field-error-text.data-v-5a44606c {
+		font-size: 13px;
+		color: #C0392B;
+}
 .submit-btn-wrap.data-v-5a44606c {
 		padding: 0 16px 12px;
 }

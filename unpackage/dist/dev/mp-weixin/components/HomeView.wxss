@@ -129,6 +129,10 @@
 		justify-content: center;
 		gap: 8px;
 }
+.refresh-btn-disabled.data-v-f29a63c4 {
+		background-color: #C7C7CC;
+		opacity: 0.8;
+}
 .refresh-icon.data-v-f29a63c4 {
 		font-size: 18px;
 		color: #FFFFFF;

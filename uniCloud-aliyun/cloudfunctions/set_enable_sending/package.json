@@ -1,0 +1,7 @@
+{
+  "name": "set_enable_sending",
+  "dependencies": {},
+  "extensions": {
+    "uni-cloud-jql": {}
+  }
+}
