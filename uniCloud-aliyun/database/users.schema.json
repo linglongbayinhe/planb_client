@@ -486,10 +486,17 @@
 			"title": "预计发送时间",
 			"description": "用户刷新倒计时后计算的预计发送时间戳（毫秒）"
 		},
+		"send_display_name": {
+			"bsonType": "string",
+			"title": "展示姓名",
+			"description": "发送计划中展示的姓名",
+			"maxLength": 100,
+			"trim": "both"
+		},
 		"send_message": {
 			"bsonType": "string",
 			"title": "发送说明/消息",
-			"description": "发送说明，最长500字",
+			"description": "发送说明/通知正文，最长500字",
 			"maxLength": 500,
 			"trim": "both"
 		}

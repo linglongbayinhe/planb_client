@@ -90,23 +90,19 @@
 			</view>
 		</view>
 
-		<!-- 展示姓名 -->
-		<view class="info-card card">
+		<!-- 展示姓名 + 通知正文（合并卡片） -->
+		<view class="content-card card">
 			<view class="info-row">
 				<text class="info-icon">🔗</text>
 				<text class="info-label">展示姓名</text>
 				<input
 					class="info-value-input"
-					v-model="displayName"
+					v-model="displayNameLocal"
 					placeholder="未设置"
 					placeholder-class="input-placeholder"
-					@blur="saveDisplayName"
 				/>
 			</view>
-		</view>
-
-		<!-- 通知正文 -->
-		<view class="notify-card card">
+			<view class="divider"></view>
 			<view class="notify-header" @click="toggleNotifyExpand">
 				<text class="info-icon">📄</text>
 				<text class="notify-title">通知正文</text>
@@ -119,19 +115,18 @@
 				<view class="notify-text-area">
 					<text class="notify-line">你好，</text>
 					<text class="notify-line">
-						如果你收到了这条通知，<text class="notify-name">{{ displayName || '（未设置）' }}</text> 可能暂时无法亲自与你联系。
+						如果你收到了这条通知，<text class="notify-name">{{ displayNameLocal || '（未设置）' }}</text> 可能暂时无法亲自与你联系。
 					</text>
 					<text class="notify-line">
-						<text class="notify-name">{{ displayName || '（未设置）' }}</text> 在 Plan B（后手）App 中预留了一份「人生备份计划」。
+						<text class="notify-name">{{ displayNameLocal || '（未设置）' }}</text> 在 Plan B（后手）App 中预留了一份「人生备份计划」。
 					</text>
 					<text class="notify-line">查找线索：请从</text>
 					<textarea
 						class="guide-textarea"
-						v-model="customGuide"
+						v-model="customGuideLocal"
 						placeholder="填写查找线索的起始指引..."
 						placeholder-class="input-placeholder"
 						:auto-height="true"
-						@blur="saveCustomGuide"
 					/>
 					<text class="notify-line">开始查找。</text>
 					<text class="notify-line">谢谢你的帮助。</text>
@@ -140,6 +135,13 @@
 						<text class="notify-hint-icon">ℹ️</text>
 						<text class="notify-hint-text">蓝紫色文字由系统自动生成，仅需编辑方框内的「第一步」指引。</text>
 					</view>
+				</view>
+			</view>
+
+			<view v-if="contentDirty" class="content-dirty-bar">
+				<text class="content-dirty-hint">*内容已变更，请点击「应用」按钮进行变更。</text>
+				<view class="apply-btn" @click="applyContent">
+					<text class="apply-btn-text">应用</text>
 				</view>
 			</view>
 		</view>
@@ -212,7 +214,11 @@
 				phoneInput: '',
 				notifyExpanded: false,
 				maxEmails: 3,
-				maxPhones: 3
+				maxPhones: 3,
+				displayNameLocal: '',
+				customGuideLocal: '',
+				appliedDisplayName: '',
+				appliedCustomGuide: ''
 			}
 		},
 		computed: {
@@ -231,13 +237,9 @@
 				get() { return store.sendPlan.phones || [] },
 				set(v) { mutations.updateSendPlan({ phones: v }) }
 			},
-			displayName: {
-				get() { return store.sendPlan.displayName || '' },
-				set(v) { mutations.updateSendPlan({ displayName: v }) }
-			},
-			customGuide: {
-				get() { return store.sendPlan.customGuide || '' },
-				set(v) { mutations.updateSendPlan({ customGuide: v }) }
+			contentDirty() {
+				return this.displayNameLocal !== this.appliedDisplayName ||
+					this.customGuideLocal !== this.appliedCustomGuide
 			},
 			intervalDays() {
 				return store.sendPlan.intervalDays || 7
@@ -258,6 +260,7 @@
 			} catch (e) {
 				this.statusBarHeight = 44
 			}
+			this.syncContentFromStore()
 		},
 		methods: {
 			addEmail() {
@@ -350,11 +353,39 @@
 					uni.showToast({ title: (e && e.message) || '云端同步失败', icon: 'none', duration: 2000 })
 				}
 			},
-			saveDisplayName() {
-				mutations.updateSendPlan({ displayName: this.displayName })
+			syncContentFromStore() {
+				const d = store.sendPlan.displayName || ''
+				const c = store.sendPlan.customGuide || ''
+				this.displayNameLocal = d
+				this.customGuideLocal = c
+				this.appliedDisplayName = d
+				this.appliedCustomGuide = c
 			},
-			saveCustomGuide() {
-				mutations.updateSendPlan({ customGuide: this.customGuide })
+			async applyContent() {
+				mutations.updateSendPlan({
+					displayName: this.displayNameLocal,
+					customGuide: this.customGuideLocal
+				})
+				this.appliedDisplayName = this.displayNameLocal
+				this.appliedCustomGuide = this.customGuideLocal
+				await this.syncSendMessageToCloud()
+			},
+			async syncSendMessageToCloud() {
+				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
+				if (!uid) return
+				try {
+					const obj = uniCloud.importObject('send_message')
+					const res = await obj.updateSendMessage(
+						this.displayNameLocal,
+						this.customGuideLocal,
+						uid
+					)
+					if (res && res.errCode && res.errCode !== 'UID_REQUIRED') {
+						uni.showToast({ title: res.errMsg || '云端同步失败', icon: 'none', duration: 2000 })
+					}
+				} catch (e) {
+					uni.showToast({ title: (e && e.message) || '云端同步失败', icon: 'none', duration: 2000 })
+				}
 			},
 			toggleNotifyExpand() {
 				this.notifyExpanded = !this.notifyExpanded
@@ -571,7 +602,7 @@
 		color: #FFFFFF;
 	}
 
-	.info-card {
+	.content-card {
 		margin: 0 16px 12px;
 		background: #FFFFFF;
 		border-radius: 12px;
@@ -604,13 +635,6 @@
 		background: transparent;
 		border: none;
 		outline: none;
-	}
-
-	.notify-card {
-		margin: 0 16px 12px;
-		background: #FFFFFF;
-		border-radius: 12px;
-		overflow: hidden;
 	}
 
 	.notify-header {
@@ -695,6 +719,40 @@
 		color: #8E8E93;
 		flex: 1;
 		line-height: 1.4;
+	}
+
+	.content-dirty-bar {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 10px 16px 14px;
+		background-color: #FFF9E6;
+		border-top: 0.5px solid #E5E5EA;
+	}
+
+	.content-dirty-hint {
+		flex: 1;
+		font-size: 13px;
+		color: #8E8E93;
+		line-height: 1.4;
+	}
+
+	.apply-btn {
+		flex-shrink: 0;
+		padding: 8px 20px;
+		background-color: #007AFF;
+		border-radius: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.apply-btn-text {
+		font-size: 15px;
+		font-weight: 600;
+		color: #FFFFFF;
 	}
 
 	.trigger-card {

@@ -145,7 +145,7 @@
 		font-size: 10px;
 		color: #FFFFFF;
 }
-.info-card.data-v-b8a25f91 {
+.content-card.data-v-b8a25f91 {
 		margin: 0 16px 12px;
 		background: #FFFFFF;
 		border-radius: 12px;
@@ -174,12 +174,6 @@
 		background: transparent;
 		border: none;
 		outline: none;
-}
-.notify-card.data-v-b8a25f91 {
-		margin: 0 16px 12px;
-		background: #FFFFFF;
-		border-radius: 12px;
-		overflow: hidden;
 }
 .notify-header.data-v-b8a25f91 {
 		display: flex;
@@ -251,6 +245,36 @@
 		color: #8E8E93;
 		flex: 1;
 		line-height: 1.4;
+}
+.content-dirty-bar.data-v-b8a25f91 {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 10px 16px 14px;
+		background-color: #FFF9E6;
+		border-top: 0.5px solid #E5E5EA;
+}
+.content-dirty-hint.data-v-b8a25f91 {
+		flex: 1;
+		font-size: 13px;
+		color: #8E8E93;
+		line-height: 1.4;
+}
+.apply-btn.data-v-b8a25f91 {
+		flex-shrink: 0;
+		padding: 8px 20px;
+		background-color: #007AFF;
+		border-radius: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+}
+.apply-btn-text.data-v-b8a25f91 {
+		font-size: 15px;
+		font-weight: 600;
+		color: #FFFFFF;
 }
 .trigger-card.data-v-b8a25f91 {
 		margin: 0 16px 12px;

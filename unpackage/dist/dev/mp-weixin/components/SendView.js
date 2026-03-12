@@ -10,7 +10,11 @@ const _sfc_main = {
       phoneInput: "",
       notifyExpanded: false,
       maxEmails: 3,
-      maxPhones: 3
+      maxPhones: 3,
+      displayNameLocal: "",
+      customGuideLocal: "",
+      appliedDisplayName: "",
+      appliedCustomGuide: ""
     };
   },
   computed: {
@@ -37,21 +41,8 @@ const _sfc_main = {
         store_index.mutations.updateSendPlan({ phones: v });
       }
     },
-    displayName: {
-      get() {
-        return store_index.store.sendPlan.displayName || "";
-      },
-      set(v) {
-        store_index.mutations.updateSendPlan({ displayName: v });
-      }
-    },
-    customGuide: {
-      get() {
-        return store_index.store.sendPlan.customGuide || "";
-      },
-      set(v) {
-        store_index.mutations.updateSendPlan({ customGuide: v });
-      }
+    contentDirty() {
+      return this.displayNameLocal !== this.appliedDisplayName || this.customGuideLocal !== this.appliedCustomGuide;
     },
     intervalDays() {
       return store_index.store.sendPlan.intervalDays || 7;
@@ -73,6 +64,7 @@ const _sfc_main = {
     } catch (e) {
       this.statusBarHeight = 44;
     }
+    this.syncContentFromStore();
   },
   methods: {
     addEmail() {
@@ -173,11 +165,40 @@ const _sfc_main = {
         common_vendor.index.showToast({ title: e && e.message || "云端同步失败", icon: "none", duration: 2e3 });
       }
     },
-    saveDisplayName() {
-      store_index.mutations.updateSendPlan({ displayName: this.displayName });
+    syncContentFromStore() {
+      const d = store_index.store.sendPlan.displayName || "";
+      const c = store_index.store.sendPlan.customGuide || "";
+      this.displayNameLocal = d;
+      this.customGuideLocal = c;
+      this.appliedDisplayName = d;
+      this.appliedCustomGuide = c;
     },
-    saveCustomGuide() {
-      store_index.mutations.updateSendPlan({ customGuide: this.customGuide });
+    async applyContent() {
+      store_index.mutations.updateSendPlan({
+        displayName: this.displayNameLocal,
+        customGuide: this.customGuideLocal
+      });
+      this.appliedDisplayName = this.displayNameLocal;
+      this.appliedCustomGuide = this.customGuideLocal;
+      await this.syncSendMessageToCloud();
+    },
+    async syncSendMessageToCloud() {
+      const uid = store_index.store.currentUser && (store_index.store.currentUser._id || store_index.store.currentUser.uid);
+      if (!uid)
+        return;
+      try {
+        const obj = common_vendor.tr.importObject("send_message");
+        const res = await obj.updateSendMessage(
+          this.displayNameLocal,
+          this.customGuideLocal,
+          uid
+        );
+        if (res && res.errCode && res.errCode !== "UID_REQUIRED") {
+          common_vendor.index.showToast({ title: res.errMsg || "云端同步失败", icon: "none", duration: 2e3 });
+        }
+      } catch (e) {
+        common_vendor.index.showToast({ title: e && e.message || "云端同步失败", icon: "none", duration: 2e3 });
+      }
     },
     toggleNotifyExpand() {
       this.notifyExpanded = !this.notifyExpanded;
@@ -257,18 +278,20 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     }),
     r: common_vendor.t($data.maxPhones),
-    s: common_vendor.o((...args) => $options.saveDisplayName && $options.saveDisplayName(...args)),
-    t: $options.displayName,
-    v: common_vendor.o(($event) => $options.displayName = $event.detail.value),
-    w: common_vendor.t($data.notifyExpanded ? "∧" : "∨"),
-    x: common_vendor.o((...args) => $options.toggleNotifyExpand && $options.toggleNotifyExpand(...args)),
-    y: $data.notifyExpanded
+    s: $data.displayNameLocal,
+    t: common_vendor.o(($event) => $data.displayNameLocal = $event.detail.value),
+    v: common_vendor.t($data.notifyExpanded ? "∧" : "∨"),
+    w: common_vendor.o((...args) => $options.toggleNotifyExpand && $options.toggleNotifyExpand(...args)),
+    x: $data.notifyExpanded
   }, $data.notifyExpanded ? {
-    z: common_vendor.t($options.displayName || "（未设置）"),
-    A: common_vendor.t($options.displayName || "（未设置）"),
-    B: common_vendor.o((...args) => $options.saveCustomGuide && $options.saveCustomGuide(...args)),
-    C: $options.customGuide,
-    D: common_vendor.o(($event) => $options.customGuide = $event.detail.value)
+    y: common_vendor.t($data.displayNameLocal || "（未设置）"),
+    z: common_vendor.t($data.displayNameLocal || "（未设置）"),
+    A: $data.customGuideLocal,
+    B: common_vendor.o(($event) => $data.customGuideLocal = $event.detail.value)
+  } : {}, {
+    C: $options.contentDirty
+  }, $options.contentDirty ? {
+    D: common_vendor.o((...args) => $options.applyContent && $options.applyContent(...args))
   } : {}, {
     E: common_vendor.t($options.formattedSendDate),
     F: common_vendor.t($options.intervalDays),
