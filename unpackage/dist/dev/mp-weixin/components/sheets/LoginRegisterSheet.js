@@ -154,9 +154,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     s: common_vendor.t($data.mode === "login" ? "登录" : "注册"),
     t: !$options.canSubmit ? 1 : "",
     v: common_vendor.o((...args) => $options.onSubmit && $options.onSubmit(...args)),
-    w: common_vendor.o(() => {
+    w: common_vendor.o((...args) => _ctx.wxLogin && _ctx.wxLogin(...args)),
+    x: common_vendor.o((...args) => _ctx.qqLogin && _ctx.qqLogin(...args)),
+    y: common_vendor.o(() => {
     }),
-    x: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
+    z: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-5a44606c"]]);

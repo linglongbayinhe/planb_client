@@ -99,6 +99,9 @@
 					</view>
 				</view>
 
+				<button class="login-btn wx" @tap="wxLogin">微信登录</button>
+				<button class="login-btn qq" @tap="qqLogin">QQ登录</button>
+
 				<!-- 底部说明 -->
 				<text class="bottom-note">注册/登录后账户与发送设置将同步至云端。</text>
 
@@ -226,6 +229,44 @@
 				} catch (e) {
 					return []
 				}
+			}
+			// 微信登录
+			wxLogin() {
+			  uni.login({
+			    provider: 'weixin',
+			    success: (loginRes) => {
+			      // loginRes.code 即微信登录凭证
+			      this.sendCodeToBackend('weixin', loginRes.code)
+			    },
+			    fail: (err) => {
+			      uni.showToast({ title: '微信登录失败', icon: 'none' })
+			    }
+			  })
+			},
+			// QQ登录
+			qqLogin() {
+			  uni.login({
+			    provider: 'qq',
+			    success: (loginRes) => {
+			      this.sendCodeToBackend('qq', loginRes.code)
+			    },
+			    fail: (err) => {
+			      uni.showToast({ title: 'QQ登录失败', icon: 'none' })
+			    }
+			  })
+			},
+			// 将 code 发送给后端
+			sendCodeToBackend(provider, code) {
+			  // 调用你自己的后端接口或云函数
+			  uniCloud.callFunction({
+			    name: 'userLogin',
+			    data: { provider, code }
+			  }).then(res => {
+			    // 登录成功，处理返回的用户 token 等信息
+			    this.loginSuccess(res.result)
+			  }).catch(err => {
+			    uni.showToast({ title: '登录失败', icon: 'none' })
+			  })
 			}
 		}
 	}
