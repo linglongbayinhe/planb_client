@@ -64,6 +64,7 @@ module.exports = {
 			status: 0,
 			email_confirmed: 0,
 			created_time: now,
+			last_login_time: now,
 			enable_sending: false
 		}
 

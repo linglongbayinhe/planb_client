@@ -11,11 +11,13 @@
 		<!-- 账户卡片 -->
 		<view class="account-card card" @click="onAccountTap">
 			<view class="account-avatar">
-				<text class="account-avatar-icon">{{ currentUser ? '👤' : '👤' }}</text>
+				<image v-if="currentUser && currentUser.avatar" class="account-avatar-img" :src="currentUser.avatar" mode="aspectFill" />
+				<text v-else class="account-avatar-icon">👤</text>
 			</view>
 			<view class="account-info">
-				<text v-if="currentUser" class="account-name">{{ currentUser.nickname || currentUser.email }}</text>
-				<text v-if="currentUser" class="account-email">{{ currentUser.email }}</text>
+				<text v-if="currentUser" class="account-name">{{ currentUser.nickname || currentUser.email || '已登录' }}</text>
+				<text v-if="currentUser && currentUser.email" class="account-email">{{ currentUser.email }}</text>
+				<text v-if="currentUser && !currentUser.email" class="account-email">微信用户</text>
 				<text v-if="!currentUser" class="account-login-title">登录 / 注册</text>
 				<text v-if="!currentUser" class="account-login-desc">线索仅加密存储于本设备</text>
 			</view>
@@ -253,6 +255,12 @@
 
 	.account-avatar-icon {
 		font-size: 26px;
+	}
+
+	.account-avatar-img {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
 	}
 
 	.account-info {

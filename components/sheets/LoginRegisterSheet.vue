@@ -236,7 +236,12 @@
 					}
 				}
 				const u = userInfo || {}
-				mutations.setUser({ _id: u._id, email: u.email || this.email, nickname: u.nickname || this.nickname })
+				mutations.setUser({
+					_id: u._id,
+					email: u.email || this.email || '',
+					nickname: u.nickname || this.nickname || '',
+					avatar: u.avatar || ''
+				})
 			},
 			getStoredUsers() {
 				try {
@@ -249,6 +254,17 @@
 			
 			async wxLogin() {
 				try {
+					let nickName = ''
+					let avatarUrl = ''
+					try {
+						const profileRes = await uni.getUserProfile({ desc: '用于完善用户资料' })
+						if (profileRes && profileRes.userInfo) {
+							nickName = profileRes.userInfo.nickName || ''
+							avatarUrl = profileRes.userInfo.avatarUrl || ''
+						}
+					} catch (pfErr) {
+						// 用户拒绝授权时继续登录，不阻断流程
+					}
 					const loginRes = await new Promise((resolve, reject) => {
 						uni.login({
 							provider: 'weixin',
@@ -257,7 +273,7 @@
 						})
 					})
 					if (loginRes && loginRes.code) {
-						await this.sendCodeToBackend('weixin', loginRes.code)
+						await this.sendCodeToBackend('weixin', loginRes.code, { nickName, avatarUrl })
 					} else {
 						uni.showToast({ title: '微信登录失败，未获取到 code', icon: 'none' })
 					}
@@ -283,25 +299,24 @@
 					uni.showToast({ title: e.errMsg || 'QQ登录失败', icon: 'none' })
 				}
 			},
-			async sendCodeToBackend(provider, code) {
+			async sendCodeToBackend(provider, code, profile) {
 				uni.showLoading({ title: '登录中...', mask: true })
 				try {
 					if (provider === 'weixin') {
-						// 微信登录：调用云函数 func_wechat_login
-						const res = await uniCloud.callFunction({
-							name: 'func_wechat_login',
-							data: { code }
-						})
+						// 微信登录：调用云对象 login_wechat，传入昵称和头像（如有）
+						const obj = uniCloud.importObject('login_wechat', { customUI: true })
+						const nickName = (profile && profile.nickName) || ''
+						const avatarUrl = (profile && profile.avatarUrl) || ''
+						const result = await obj.login(code, nickName, avatarUrl)
 						uni.hideLoading()
-						const result = (res && res.result) || {}
-						if (result.code === 0 && result.token) {
+						if (result && result.code === 0 && result.token) {
 							this.saveTokenAndUser(
 								{ token: result.token },
 								result.userInfo || {}
 							)
 							this.$emit('close')
 						} else {
-							uni.showToast({ title: (result.message) || '微信登录失败', icon: 'none' })
+							uni.showToast({ title: (result && result.message) || '微信登录失败', icon: 'none' })
 						}
 					} else {
 						// QQ 登录：调用云对象 register.oauthLogin

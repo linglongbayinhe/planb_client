@@ -38,6 +38,11 @@
 .account-avatar-icon.data-v-c1020a98 {
 		font-size: 26px;
 }
+.account-avatar-img.data-v-c1020a98 {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+}
 .account-info.data-v-c1020a98 {
 		flex: 1;
 		display: flex;

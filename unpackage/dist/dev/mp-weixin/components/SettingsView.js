@@ -90,40 +90,45 @@ if (!Array) {
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: $data.statusBarHeight + "px",
-    b: common_vendor.t($options.currentUser ? "👤" : "👤"),
-    c: $options.currentUser
-  }, $options.currentUser ? {
-    d: common_vendor.t($options.currentUser.nickname || $options.currentUser.email)
+    b: $options.currentUser && $options.currentUser.avatar
+  }, $options.currentUser && $options.currentUser.avatar ? {
+    c: $options.currentUser.avatar
   } : {}, {
-    e: $options.currentUser
+    d: $options.currentUser
   }, $options.currentUser ? {
-    f: common_vendor.t($options.currentUser.email)
+    e: common_vendor.t($options.currentUser.nickname || $options.currentUser.email || "已登录")
   } : {}, {
-    g: !$options.currentUser
+    f: $options.currentUser && $options.currentUser.email
+  }, $options.currentUser && $options.currentUser.email ? {
+    g: common_vendor.t($options.currentUser.email)
+  } : {}, {
+    h: $options.currentUser && !$options.currentUser.email
+  }, $options.currentUser && !$options.currentUser.email ? {} : {}, {
+    i: !$options.currentUser
   }, !$options.currentUser ? {} : {}, {
-    h: !$options.currentUser
+    j: !$options.currentUser
   }, !$options.currentUser ? {} : {}, {
-    i: $options.currentUser
+    k: $options.currentUser
   }, $options.currentUser ? {
-    j: common_vendor.o((...args) => $options.confirmLogout && $options.confirmLogout(...args))
+    l: common_vendor.o((...args) => $options.confirmLogout && $options.confirmLogout(...args))
   } : {}, {
-    k: common_vendor.o((...args) => $options.onAccountTap && $options.onAccountTap(...args)),
-    l: common_vendor.t($options.themeLabel),
-    m: common_vendor.o(($event) => $data.showThemePicker = true),
-    n: common_vendor.t($options.languageLabel),
-    o: common_vendor.o(($event) => $data.showLanguagePicker = true),
-    p: common_vendor.o((...args) => $options.confirmReset && $options.confirmReset(...args)),
-    q: $data.showLoginSheet
+    m: common_vendor.o((...args) => $options.onAccountTap && $options.onAccountTap(...args)),
+    n: common_vendor.t($options.themeLabel),
+    o: common_vendor.o(($event) => $data.showThemePicker = true),
+    p: common_vendor.t($options.languageLabel),
+    q: common_vendor.o(($event) => $data.showLanguagePicker = true),
+    r: common_vendor.o((...args) => $options.confirmReset && $options.confirmReset(...args)),
+    s: $data.showLoginSheet
   }, $data.showLoginSheet ? {
-    r: common_vendor.o(($event) => $data.showLoginSheet = false)
+    t: common_vendor.o(($event) => $data.showLoginSheet = false)
   } : {}, {
-    s: $data.showThemePicker
+    v: $data.showThemePicker
   }, $data.showThemePicker ? {
-    t: common_vendor.o(($event) => $data.showThemePicker = false)
+    w: common_vendor.o(($event) => $data.showThemePicker = false)
   } : {}, {
-    v: $data.showLanguagePicker
+    x: $data.showLanguagePicker
   }, $data.showLanguagePicker ? {
-    w: common_vendor.o(($event) => $data.showLanguagePicker = false)
+    y: common_vendor.o(($event) => $data.showLanguagePicker = false)
   } : {});
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-c1020a98"]]);

@@ -108,7 +108,12 @@ const _sfc_main = {
         }
       }
       const u = userInfo || {};
-      store_index.mutations.setUser({ _id: u._id, email: u.email || this.email, nickname: u.nickname || this.nickname });
+      store_index.mutations.setUser({
+        _id: u._id,
+        email: u.email || this.email || "",
+        nickname: u.nickname || this.nickname || "",
+        avatar: u.avatar || ""
+      });
     },
     getStoredUsers() {
       try {
@@ -120,6 +125,16 @@ const _sfc_main = {
     },
     async wxLogin() {
       try {
+        let nickName = "";
+        let avatarUrl = "";
+        try {
+          const profileRes = await common_vendor.index.getUserProfile({ desc: "用于完善用户资料" });
+          if (profileRes && profileRes.userInfo) {
+            nickName = profileRes.userInfo.nickName || "";
+            avatarUrl = profileRes.userInfo.avatarUrl || "";
+          }
+        } catch (pfErr) {
+        }
         const loginRes = await new Promise((resolve, reject) => {
           common_vendor.index.login({
             provider: "weixin",
@@ -128,7 +143,7 @@ const _sfc_main = {
           });
         });
         if (loginRes && loginRes.code) {
-          await this.sendCodeToBackend("weixin", loginRes.code);
+          await this.sendCodeToBackend("weixin", loginRes.code, { nickName, avatarUrl });
         } else {
           common_vendor.index.showToast({ title: "微信登录失败，未获取到 code", icon: "none" });
         }
@@ -154,24 +169,23 @@ const _sfc_main = {
         common_vendor.index.showToast({ title: e.errMsg || "QQ登录失败", icon: "none" });
       }
     },
-    async sendCodeToBackend(provider, code) {
+    async sendCodeToBackend(provider, code, profile) {
       common_vendor.index.showLoading({ title: "登录中...", mask: true });
       try {
         if (provider === "weixin") {
-          const res = await common_vendor.tr.callFunction({
-            name: "func_wechat_login",
-            data: { code }
-          });
+          const obj = common_vendor.tr.importObject("login_wechat", { customUI: true });
+          const nickName = profile && profile.nickName || "";
+          const avatarUrl = profile && profile.avatarUrl || "";
+          const result = await obj.login(code, nickName, avatarUrl);
           common_vendor.index.hideLoading();
-          const result = res && res.result || {};
-          if (result.code === 0 && result.token) {
+          if (result && result.code === 0 && result.token) {
             this.saveTokenAndUser(
               { token: result.token },
               result.userInfo || {}
             );
             this.$emit("close");
           } else {
-            common_vendor.index.showToast({ title: result.message || "微信登录失败", icon: "none" });
+            common_vendor.index.showToast({ title: result && result.message || "微信登录失败", icon: "none" });
           }
         } else {
           const obj = common_vendor.tr.importObject("register", { customUI: true });
