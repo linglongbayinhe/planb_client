@@ -63,7 +63,7 @@ module.exports = {
 			nickname: (nickname && typeof nickname === 'string') ? nickname.trim() : '',
 			status: 0,
 			email_confirmed: 0,
-			register_date: now,
+			created_time: now,
 			enable_sending: false
 		}
 
@@ -146,5 +146,109 @@ module.exports = {
 			newToken,
 			userInfo: { _id: uid, email: user.email, nickname: user.nickname || '' }
 		}
+	},
+
+	/**
+	 * 第三方登录（微信/QQ）：用 code 换取 openid，查库或建用户后返回 token
+	 * 环境变量：WECHAT_MINI_APPID、WECHAT_MINI_SECRET（微信）；QQ_MINI_APPID、QQ_MINI_SECRET（QQ）
+	 * @param {string} provider 'weixin' | 'qq'
+	 * @param {string} code 前端 uni.login 拿到的 code
+	 * @returns {object} 成功 { errCode: 0, newToken, userInfo }；失败 { errCode, errMsg }
+	 */
+	async oauthLogin(provider, code) {
+		const p = (provider && String(provider).toLowerCase()) === 'qq' ? 'qq' : 'weixin'
+		const c = (code && typeof code === 'string') ? code.trim() : ''
+		if (!c) {
+			return { errCode: 'PARAM_INVALID', errMsg: '缺少登录凭证 code' }
+		}
+
+		const db = uniCloud.database()
+		let openid = null
+		let nickname = ''
+
+		if (p === 'weixin') {
+			const appId = process.env.WECHAT_MINI_APPID || ''
+			const secret = process.env.WECHAT_MINI_SECRET || ''
+			if (!appId || !secret) {
+				return { errCode: 'CONFIG_MISSING', errMsg: '请配置微信小程序 AppID 与 AppSecret 环境变量' }
+			}
+			const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${encodeURIComponent(appId)}&secret=${encodeURIComponent(secret)}&js_code=${encodeURIComponent(c)}&grant_type=authorization_code`
+			try {
+				const res = await uniCloud.httpclient.request(url, { method: 'GET', dataType: 'json' })
+				const body = res.data || {}
+				if (body.errcode) {
+					return { errCode: 'WECHAT_ERROR', errMsg: body.errmsg || '微信 code 校验失败' }
+				}
+				openid = body.openid || null
+			} catch (e) {
+				return { errCode: 'NETWORK_ERROR', errMsg: e.message || '请求微信接口失败' }
+			}
+		} else {
+			// QQ 小程序：需在 QQ 互联配置并设置 QQ_MINI_APPID、QQ_MINI_SECRET，调用 QQ 的 code2session 接口
+			const appId = process.env.QQ_MINI_APPID || ''
+			const secret = process.env.QQ_MINI_SECRET || ''
+			if (!appId || !secret) {
+				return { errCode: 'CONFIG_MISSING', errMsg: '请配置 QQ 小程序 AppID 与 AppSecret 环境变量' }
+			}
+			const url = `https://api.q.qq.com/sns/jscode2session?appid=${encodeURIComponent(appId)}&secret=${encodeURIComponent(secret)}&js_code=${encodeURIComponent(c)}&grant_type=authorization_code`
+			try {
+				const res = await uniCloud.httpclient.request(url, { method: 'GET', dataType: 'json' })
+				const body = res.data || {}
+				if (body.errcode) {
+					return { errCode: 'QQ_ERROR', errMsg: body.errmsg || 'QQ code 校验失败' }
+				}
+				openid = body.openid || null
+			} catch (e) {
+				return { errCode: 'NETWORK_ERROR', errMsg: e.message || '请求 QQ 接口失败' }
+			}
+		}
+
+		if (!openid) {
+			return { errCode: 'OAUTH_FAIL', errMsg: '未获取到用户标识' }
+		}
+
+		let user = null
+		const queryRes = await db.collection('users').where(p === 'weixin' ? { 'wx_openid.mp': openid } : { qq_openid: openid }).limit(1).get()
+		if (queryRes.data && queryRes.data.length > 0) {
+			user = queryRes.data[0]
+		}
+
+		let uid
+		if (user) {
+			if (user.status === 1) {
+				return { errCode: 'USER_DISABLED', errMsg: '该账号已被禁用' }
+			}
+			uid = user._id
+			nickname = user.nickname || ''
+		} else {
+			const now = Date.now()
+			const userDoc = p === 'weixin'
+				? { wx_openid: { mp: openid }, nickname: '', status: 0, created_time: now, enable_sending: false }
+				: { qq_openid: openid, nickname: '', status: 0, created_time: now, enable_sending: false }
+			const addRes = await db.collection('users').add(userDoc)
+			uid = addRes.id
+		}
+
+		let newToken = null
+		if (this._uniId && uid) {
+			try {
+				const tokenRes = await this._uniId.createToken({ uid })
+				if (tokenRes.token && tokenRes.tokenExpired) {
+					newToken = { token: tokenRes.token, tokenExpired: tokenRes.tokenExpired }
+				}
+			} catch (tokenErr) {}
+		}
+
+		return {
+			errCode: 0,
+			errMsg: '',
+			newToken,
+			userInfo: { _id: uid, email: '', nickname }
+		}
+	},
+
+	/** 兼容拼写错误：前端误调 couthLogin 时转发到 oauthLogin */
+	async couthLogin(provider, code) {
+		return this.oauthLogin(provider, code)
 	}
 }

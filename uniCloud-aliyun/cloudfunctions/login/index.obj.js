@@ -12,7 +12,7 @@ module.exports = {
 	},
 
 	/**
-	 * 记录用户本次登录时间与 IP 到 users 表的 last_login_date、last_login_ip 字段
+	 * 记录用户本次登录时间与 IP 到 users 表的 last_login_time、last_login_ip 字段
 	 * @param {string} [uid] 用户 ID；不传时从 uni-id token 自动解析
 	 * @returns {object} { success: true } 或 { errCode, errMsg }
 	 */
@@ -42,7 +42,7 @@ module.exports = {
 		} catch (e) {}
 
 		const now = Date.now()
-		const updateData = { last_login_date: now }
+		const updateData = { last_login_time: now }
 		if (clientIP) updateData.last_login_ip = clientIP
 
 		const db = uniCloud.database()

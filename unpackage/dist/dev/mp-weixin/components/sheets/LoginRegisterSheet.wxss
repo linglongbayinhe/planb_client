@@ -144,6 +144,57 @@
 		font-weight: 600;
 		color: #FFFFFF;
 }
+.oauth-section.data-v-5a44606c {
+		margin: 16px 16px 0;
+		padding: 0 0 8px;
+}
+.oauth-divider.data-v-5a44606c {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 14px;
+}
+.oauth-divider-line.data-v-5a44606c {
+		flex: 1;
+		height: 0.5px;
+		background-color: #E5E5EA;
+}
+.oauth-divider-text.data-v-5a44606c {
+		font-size: 13px;
+		color: #8E8E93;
+}
+.oauth-btn-wrap.data-v-5a44606c {
+		display: flex;
+		flex-direction: row;
+		gap: 12px;
+}
+.oauth-btn.data-v-5a44606c {
+		flex: 1;
+		height: 48px;
+		border-radius: 12px;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+}
+.oauth-btn-wx.data-v-5a44606c {
+		background-color: #07C160;
+}
+.oauth-btn-qq.data-v-5a44606c {
+		background-color: #12B7F5;
+}
+.oauth-btn-icon.data-v-5a44606c {
+		font-size: 18px;
+		font-weight: 600;
+		color: #FFFFFF;
+}
+.oauth-btn-text.data-v-5a44606c {
+		font-size: 15px;
+		font-weight: 500;
+		color: #FFFFFF;
+}
 .bottom-note.data-v-5a44606c {
 		font-size: 13px;
 		color: #8E8E93;

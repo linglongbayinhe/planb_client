@@ -45,27 +45,13 @@
 			return {
 				currentTab: 0,
 				safeAreaBottom: 0,
+				// Tab 图标须用 PNG（微信小程序 image 用 SVG 易导致启动报错 [] [object Object]）
+				// 若已添加 home/clues/send/settings 的 png，可改为对应路径；否则先用 play/pause 占位
 				tabs: [
-					{
-						label: '首页',
-						icon: '/static/icons/home.svg',
-						iconActive: '/static/icons/home-active.svg'
-					},
-					{
-						label: '线索库',
-						icon: '/static/icons/clues.svg',
-						iconActive: '/static/icons/clues-active.svg'
-					},
-					{
-						label: '发送',
-						icon: '/static/icons/send.svg',
-						iconActive: '/static/icons/send-active.svg'
-					},
-					{
-						label: '设置',
-						icon: '/static/icons/settings.svg',
-						iconActive: '/static/icons/settings-active.svg'
-					}
+					{ label: '首页', icon: '/static/icons/play.png', iconActive: '/static/icons/pause.png' },
+					{ label: '线索库', icon: '/static/icons/play.png', iconActive: '/static/icons/pause.png' },
+					{ label: '发送', icon: '/static/icons/play.png', iconActive: '/static/icons/pause.png' },
+					{ label: '设置', icon: '/static/icons/play.png', iconActive: '/static/icons/pause.png' }
 				]
 			}
 		},

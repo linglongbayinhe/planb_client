@@ -99,8 +99,24 @@
 					</view>
 				</view>
 
-				<button class="login-btn wx" @tap="wxLogin">微信登录</button>
-				<button class="login-btn qq" @tap="qqLogin">QQ登录</button>
+				<!-- 其他登录方式 -->
+				<view class="oauth-section">
+					<view class="oauth-divider">
+						<view class="oauth-divider-line"></view>
+						<text class="oauth-divider-text">其他登录方式</text>
+						<view class="oauth-divider-line"></view>
+					</view>
+					<view class="oauth-btn-wrap">
+						<view class="oauth-btn oauth-btn-wx" @click="wxLogin">
+							<text class="oauth-btn-icon">微</text>
+							<text class="oauth-btn-text">微信登录</text>
+						</view>
+						<view class="oauth-btn oauth-btn-qq" @click="qqLogin">
+							<text class="oauth-btn-icon">Q</text>
+							<text class="oauth-btn-text">QQ登录</text>
+						</view>
+					</view>
+				</view>
 
 				<!-- 底部说明 -->
 				<text class="bottom-note">注册/登录后账户与发送设置将同步至云端。</text>
@@ -229,44 +245,80 @@
 				} catch (e) {
 					return []
 				}
-			}
-			// 微信登录
-			wxLogin() {
-			  uni.login({
-			    provider: 'weixin',
-			    success: (loginRes) => {
-			      // loginRes.code 即微信登录凭证
-			      this.sendCodeToBackend('weixin', loginRes.code)
-			    },
-			    fail: (err) => {
-			      uni.showToast({ title: '微信登录失败', icon: 'none' })
-			    }
-			  })
 			},
-			// QQ登录
-			qqLogin() {
-			  uni.login({
-			    provider: 'qq',
-			    success: (loginRes) => {
-			      this.sendCodeToBackend('qq', loginRes.code)
-			    },
-			    fail: (err) => {
-			      uni.showToast({ title: 'QQ登录失败', icon: 'none' })
-			    }
-			  })
+			
+			async wxLogin() {
+				try {
+					const loginRes = await new Promise((resolve, reject) => {
+						uni.login({
+							provider: 'weixin',
+							success: resolve,
+							fail: reject
+						})
+					})
+					if (loginRes && loginRes.code) {
+						await this.sendCodeToBackend('weixin', loginRes.code)
+					} else {
+						uni.showToast({ title: '微信登录失败，未获取到 code', icon: 'none' })
+					}
+				} catch (e) {
+					uni.showToast({ title: (e && e.errMsg) || '微信登录失败', icon: 'none' })
+				}
 			},
-			// 将 code 发送给后端
-			sendCodeToBackend(provider, code) {
-			  // 调用你自己的后端接口或云函数
-			  uniCloud.callFunction({
-			    name: 'userLogin',
-			    data: { provider, code }
-			  }).then(res => {
-			    // 登录成功，处理返回的用户 token 等信息
-			    this.loginSuccess(res.result)
-			  }).catch(err => {
-			    uni.showToast({ title: '登录失败', icon: 'none' })
-			  })
+			async qqLogin() {
+				try {
+					const loginRes = await new Promise((resolve, reject) => {
+						uni.login({
+							provider: 'qq',
+							success: resolve,
+							fail: reject
+						})
+					})
+					if (loginRes.code) {
+						await this.sendCodeToBackend('qq', loginRes.code)
+					} else {
+						uni.showToast({ title: 'QQ登录失败，未获取到 code', icon: 'none' })
+					}
+				} catch (e) {
+					uni.showToast({ title: e.errMsg || 'QQ登录失败', icon: 'none' })
+				}
+			},
+			async sendCodeToBackend(provider, code) {
+				uni.showLoading({ title: '登录中...', mask: true })
+				try {
+					if (provider === 'weixin') {
+						// 微信登录：调用云函数 func_wechat_login
+						const res = await uniCloud.callFunction({
+							name: 'func_wechat_login',
+							data: { code }
+						})
+						uni.hideLoading()
+						const result = (res && res.result) || {}
+						if (result.code === 0 && result.token) {
+							this.saveTokenAndUser(
+								{ token: result.token },
+								result.userInfo || {}
+							)
+							this.$emit('close')
+						} else {
+							uni.showToast({ title: (result.message) || '微信登录失败', icon: 'none' })
+						}
+					} else {
+						// QQ 登录：调用云对象 register.oauthLogin
+						const obj = uniCloud.importObject('register', { customUI: true })
+						const res = await obj.oauthLogin(provider, code)
+						uni.hideLoading()
+						if (res && res.errCode === 0) {
+							this.saveTokenAndUser(res.newToken, res.userInfo)
+							this.$emit('close')
+						} else {
+							uni.showToast({ title: (res && res.errMsg) || '登录失败', icon: 'none' })
+						}
+					}
+				} catch (e) {
+					uni.hideLoading()
+					uni.showToast({ title: (e && e.message) || '网络异常，请重试', icon: 'none' })
+				}
 			}
 		}
 	}
@@ -439,6 +491,67 @@
 	.submit-btn-text {
 		font-size: 17px;
 		font-weight: 600;
+		color: #FFFFFF;
+	}
+
+	.oauth-section {
+		margin: 16px 16px 0;
+		padding: 0 0 8px;
+	}
+
+	.oauth-divider {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 14px;
+	}
+
+	.oauth-divider-line {
+		flex: 1;
+		height: 0.5px;
+		background-color: #E5E5EA;
+	}
+
+	.oauth-divider-text {
+		font-size: 13px;
+		color: #8E8E93;
+	}
+
+	.oauth-btn-wrap {
+		display: flex;
+		flex-direction: row;
+		gap: 12px;
+	}
+
+	.oauth-btn {
+		flex: 1;
+		height: 48px;
+		border-radius: 12px;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+	}
+
+	.oauth-btn-wx {
+		background-color: #07C160;
+	}
+
+	.oauth-btn-qq {
+		background-color: #12B7F5;
+	}
+
+	.oauth-btn-icon {
+		font-size: 18px;
+		font-weight: 600;
+		color: #FFFFFF;
+	}
+
+	.oauth-btn-text {
+		font-size: 15px;
+		font-weight: 500;
 		color: #FFFFFF;
 	}
 

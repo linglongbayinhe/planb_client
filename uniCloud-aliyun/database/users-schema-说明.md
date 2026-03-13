@@ -31,7 +31,7 @@
 
 ### 内置字段完整性
 
-- 已保留 uni-id-users 常用字段：`_id`、`username`、`password`、`email`、`mobile`、`status`、`role`、`token`、`nickname`、`avatar`、`register_date`、`last_login_date`、各第三方 openid、`identities` 等，类型与模板一致。
+- 已保留 uni-id-users 常用字段：`_id`、`username`、`password`、`email`、`mobile`、`status`、`role`、`token`、`nickname`、`avatar`、`created_time`、`last_login_time`、各第三方 openid、`identities` 等，类型与模板一致。
 - `required` 仍为空数组，注册/登录由 uni-id 在云函数内校验必填项，无需在 schema 里写死 required。
 
 ### 数据验证规则

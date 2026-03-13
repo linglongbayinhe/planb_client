@@ -196,6 +196,10 @@
 			"bsonType": "string",
 			"description": "苹果登录openid"
 		},
+		"qq_openid": {
+			"bsonType": "string",
+			"description": "QQ 小程序 openid"
+		},
 		"dcloud_appid": {
 			"bsonType": "array",
 			"description": "允许登录的客户端的appid列表",
@@ -405,7 +409,7 @@
 			"bsonType": "int",
 			"description": "用户积分，积分变更记录可参考：uni-id-scores表定义"
 		},
-		"register_date": {
+		"created_time": {
 			"bsonType": "timestamp",
 			"description": "注册时间",
 			"forceDefaultValue": {
@@ -419,7 +423,7 @@
 				"$env": "clientIP"
 			}
 		},
-		"last_login_date": {
+		"last_login_time": {
 			"bsonType": "timestamp",
 			"description": "最后登录时间"
 		},

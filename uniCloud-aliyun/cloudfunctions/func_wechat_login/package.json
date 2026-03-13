@@ -1,0 +1,7 @@
+{
+  "name": "func_wechat_login",
+  "dependencies": {},
+  "extensions": {
+    "uni-cloud-jql": {}
+  }
+}

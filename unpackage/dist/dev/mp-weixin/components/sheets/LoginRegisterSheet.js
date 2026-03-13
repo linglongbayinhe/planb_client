@@ -117,6 +117,77 @@ const _sfc_main = {
       } catch (e) {
         return [];
       }
+    },
+    async wxLogin() {
+      try {
+        const loginRes = await new Promise((resolve, reject) => {
+          common_vendor.index.login({
+            provider: "weixin",
+            success: resolve,
+            fail: reject
+          });
+        });
+        if (loginRes && loginRes.code) {
+          await this.sendCodeToBackend("weixin", loginRes.code);
+        } else {
+          common_vendor.index.showToast({ title: "微信登录失败，未获取到 code", icon: "none" });
+        }
+      } catch (e) {
+        common_vendor.index.showToast({ title: e && e.errMsg || "微信登录失败", icon: "none" });
+      }
+    },
+    async qqLogin() {
+      try {
+        const loginRes = await new Promise((resolve, reject) => {
+          common_vendor.index.login({
+            provider: "qq",
+            success: resolve,
+            fail: reject
+          });
+        });
+        if (loginRes.code) {
+          await this.sendCodeToBackend("qq", loginRes.code);
+        } else {
+          common_vendor.index.showToast({ title: "QQ登录失败，未获取到 code", icon: "none" });
+        }
+      } catch (e) {
+        common_vendor.index.showToast({ title: e.errMsg || "QQ登录失败", icon: "none" });
+      }
+    },
+    async sendCodeToBackend(provider, code) {
+      common_vendor.index.showLoading({ title: "登录中...", mask: true });
+      try {
+        if (provider === "weixin") {
+          const res = await common_vendor.tr.callFunction({
+            name: "func_wechat_login",
+            data: { code }
+          });
+          common_vendor.index.hideLoading();
+          const result = res && res.result || {};
+          if (result.code === 0 && result.token) {
+            this.saveTokenAndUser(
+              { token: result.token },
+              result.userInfo || {}
+            );
+            this.$emit("close");
+          } else {
+            common_vendor.index.showToast({ title: result.message || "微信登录失败", icon: "none" });
+          }
+        } else {
+          const obj = common_vendor.tr.importObject("register", { customUI: true });
+          const res = await obj.oauthLogin(provider, code);
+          common_vendor.index.hideLoading();
+          if (res && res.errCode === 0) {
+            this.saveTokenAndUser(res.newToken, res.userInfo);
+            this.$emit("close");
+          } else {
+            common_vendor.index.showToast({ title: res && res.errMsg || "登录失败", icon: "none" });
+          }
+        }
+      } catch (e) {
+        common_vendor.index.hideLoading();
+        common_vendor.index.showToast({ title: e && e.message || "网络异常，请重试", icon: "none" });
+      }
     }
   }
 };
@@ -154,8 +225,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     s: common_vendor.t($data.mode === "login" ? "登录" : "注册"),
     t: !$options.canSubmit ? 1 : "",
     v: common_vendor.o((...args) => $options.onSubmit && $options.onSubmit(...args)),
-    w: common_vendor.o((...args) => _ctx.wxLogin && _ctx.wxLogin(...args)),
-    x: common_vendor.o((...args) => _ctx.qqLogin && _ctx.qqLogin(...args)),
+    w: common_vendor.o((...args) => $options.wxLogin && $options.wxLogin(...args)),
+    x: common_vendor.o((...args) => $options.qqLogin && $options.qqLogin(...args)),
     y: common_vendor.o(() => {
     }),
     z: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))

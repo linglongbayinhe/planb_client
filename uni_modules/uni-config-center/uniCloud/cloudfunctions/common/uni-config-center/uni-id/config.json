@@ -1,0 +1,19 @@
+// uniCloud-aliyun/cloudfunctions/common/uni-config-center/uni-id/config.json
+{
+  "passwordSecret": "passwordSecret-demo", // 连接线上环境务必修改，使用随机字符串
+  "tokenSecret": "tokenSecret-demo",       // 连接线上环境务必修改，使用随机字符串
+  "tokenExpiresIn": 7200,
+  "tokenExpiresThreshold": 600,
+  "passwordErrorLimit": 6,
+  "bindTokenToDevice": false,
+  "passwordInvalidLimit": 6,
+  "passwordInvalidTime": 86400,
+  "multipleSessions": false,
+  "app": {
+    "weixin": {
+      // 在这里填写你的小程序配置！
+      "appid": "wx8e293e6f73b4fe8b",
+      "appsecret": "b3846247b9984887f9955d0fdfc70e63"
+    }
+  }
+}
