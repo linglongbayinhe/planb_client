@@ -26,11 +26,12 @@ const _sfc_main = {
     };
   },
   onLoad() {
-    common_vendor.index.getSystemInfo({
-      success: (info) => {
-        this.safeAreaBottom = info.safeAreaInsets ? info.safeAreaInsets.bottom : 0;
-      }
-    });
+    try {
+      const info = typeof common_vendor.index.getWindowInfo === "function" ? common_vendor.index.getWindowInfo() : null;
+      this.safeAreaBottom = info && info.safeAreaInsets && info.safeAreaInsets.bottom || 0;
+    } catch (e) {
+      this.safeAreaBottom = 0;
+    }
   },
   methods: {
     switchTab(index) {

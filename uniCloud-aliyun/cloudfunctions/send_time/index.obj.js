@@ -12,7 +12,7 @@ module.exports = {
 	},
 
 	/**
-	 * 更新用户的预计发送时间（send_date）
+	 * 更新用户的预计发送时间（send_time）
 	 * @param {number} sendDate 预计发送时间戳（毫秒），由前端计算后传入
 	 * @param {string} [uid]    用户 ID；不传时从 uni-id token 自动解析
 	 * @returns {object} { success: true } 或 { errCode, errMsg }
@@ -47,7 +47,7 @@ module.exports = {
 		const db = uniCloud.database()
 		try {
 			await db.collection('users').doc(uid).update({
-				send_date: sendDate
+				send_time: sendDate
 			})
 			return { success: true }
 		} catch (e) {

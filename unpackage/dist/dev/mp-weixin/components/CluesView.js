@@ -88,11 +88,12 @@ const _sfc_main = {
     }
   },
   mounted() {
-    common_vendor.index.getSystemInfo({
-      success: (info) => {
-        this.statusBarHeight = info.statusBarHeight || 44;
-      }
-    });
+    try {
+      const info = typeof common_vendor.index.getWindowInfo === "function" ? common_vendor.index.getWindowInfo() : null;
+      this.statusBarHeight = info && info.statusBarHeight || 44;
+    } catch (e) {
+      this.statusBarHeight = 44;
+    }
   },
   methods: {
     getDragChipStyle(i) {

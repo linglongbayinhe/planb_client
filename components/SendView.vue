@@ -193,6 +193,13 @@
 			</view>
 		</view>
 
+		<!-- 临时：30 秒后触发（测试用） -->
+		<view class="plan-btn-wrap">
+			<view class="plan-btn plan-btn-test" @click="trigger30Sec">
+				<text class="plan-btn-text">30 秒后触发</text>
+			</view>
+		</view>
+
 		<!-- 底部说明 -->
 		<view class="bottom-hint-wrap">
 			<text class="bottom-hint">只要定期进入 App 刷新倒计时，计划将不会触发发送。系统仅在您失联且满足设定天数时才会发送通知。</text>
@@ -255,8 +262,8 @@
 		},
 		mounted() {
 			try {
-				const info = uni.getSystemInfoSync()
-				this.statusBarHeight = info.statusBarHeight ?? 44
+				const info = (typeof uni.getWindowInfo === 'function') ? uni.getWindowInfo() : null
+				this.statusBarHeight = (info && info.statusBarHeight) ?? 44
 			} catch (e) {
 				this.statusBarHeight = 44
 			}
@@ -422,6 +429,23 @@
 					}
 				} catch (e) {
 					uni.showToast({ title: (e && e.message) || '同步到云端失败', icon: 'none' })
+				}
+			},
+			async trigger30Sec() {
+				if (!this.currentUid) {
+					uni.showToast({ title: '请先登录', icon: 'none' })
+					return
+				}
+				try {
+					const obj = uniCloud.importObject('send_time')
+					const res = await obj.updateSendTime(Date.now() + 30000, this.currentUid)
+					if (res && res.errCode) {
+						uni.showToast({ title: res.errMsg || '设置失败', icon: 'none' })
+						return
+					}
+					uni.showToast({ title: '已设置 30 秒后触发', icon: 'success' })
+				} catch (e) {
+					uni.showToast({ title: (e && e.message) || '设置失败', icon: 'none' })
 				}
 			}
 		}
@@ -863,6 +887,10 @@
 
 	.plan-btn-off .plan-btn-text {
 		color: #FFFFFF;
+	}
+
+	.plan-btn-test {
+		background-color: #8E8E93;
 	}
 
 	.plan-btn-text {

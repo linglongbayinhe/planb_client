@@ -485,7 +485,7 @@
 			"description": "是否开启发送计划",
 			"defaultValue": false
 		},
-		"send_date": {
+		"send_time": {
 			"bsonType": "timestamp",
 			"title": "预计发送时间",
 			"description": "用户刷新倒计时后计算的预计发送时间戳（毫秒）"

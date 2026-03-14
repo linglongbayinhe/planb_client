@@ -3,6 +3,8 @@
 'use strict'
 
 const crypto = require('crypto')
+const createConfig = require('uni-config-center')
+const uniIdConfig = createConfig({ pluginId: 'uni-id' })
 
 module.exports = {
 	_before() {},
@@ -20,8 +22,8 @@ module.exports = {
 			return { code: 1, message: '缺少 code' }
 		}
 
-		const appId = process.env.WECHAT_MINI_APPID || 'wx8e293e6f73b4fe8b'
-		const secret = process.env.WECHAT_MINI_SECRET || 'b3846247b9984887f9955d0fdfc70e63'
+		const appId = process.env.WECHAT_MINI_APPID || uniIdConfig.config('app.weixin.appid')
+		const secret = process.env.WECHAT_MINI_SECRET || uniIdConfig.config('app.weixin.appsecret')
 
 		const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${encodeURIComponent(appId)}&secret=${encodeURIComponent(secret)}&js_code=${encodeURIComponent(c)}&grant_type=authorization_code`
 

@@ -59,8 +59,8 @@ const _sfc_main = {
   },
   mounted() {
     try {
-      const info = common_vendor.index.getSystemInfoSync();
-      this.statusBarHeight = info.statusBarHeight ?? 44;
+      const info = typeof common_vendor.index.getWindowInfo === "function" ? common_vendor.index.getWindowInfo() : null;
+      this.statusBarHeight = (info && info.statusBarHeight) ?? 44;
     } catch (e) {
       this.statusBarHeight = 44;
     }
@@ -235,6 +235,23 @@ const _sfc_main = {
       } catch (e) {
         common_vendor.index.showToast({ title: e && e.message || "同步到云端失败", icon: "none" });
       }
+    },
+    async trigger30Sec() {
+      if (!this.currentUid) {
+        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+        return;
+      }
+      try {
+        const obj = common_vendor.tr.importObject("send_time");
+        const res = await obj.updateSendTime(Date.now() + 3e4, this.currentUid);
+        if (res && res.errCode) {
+          common_vendor.index.showToast({ title: res.errMsg || "设置失败", icon: "none" });
+          return;
+        }
+        common_vendor.index.showToast({ title: "已设置 30 秒后触发", icon: "success" });
+      } catch (e) {
+        common_vendor.index.showToast({ title: e && e.message || "设置失败", icon: "none" });
+      }
     }
   }
 };
@@ -302,7 +319,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     K: common_vendor.t($options.planEnabled ? "关闭发送计划" : "开启发送计划"),
     L: common_vendor.n($options.planEnabled ? "plan-btn-off" : "plan-btn-on"),
     M: common_vendor.o((...args) => $options.togglePlan && $options.togglePlan(...args)),
-    N: ($data.statusBarHeight || 0) + "px"
+    N: common_vendor.o((...args) => $options.trigger30Sec && $options.trigger30Sec(...args)),
+    O: ($data.statusBarHeight || 0) + "px"
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-b8a25f91"]]);

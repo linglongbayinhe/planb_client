@@ -227,11 +227,12 @@
 			}
 		},
 		mounted() {
-			uni.getSystemInfo({
-				success: (info) => {
-					this.statusBarHeight = info.statusBarHeight || 44
-				}
-			})
+			try {
+				const info = (typeof uni.getWindowInfo === 'function') ? uni.getWindowInfo() : null
+				this.statusBarHeight = (info && info.statusBarHeight) || 44
+			} catch (e) {
+				this.statusBarHeight = 44
+			}
 		},
 		methods: {
 			getDragChipStyle(i) {

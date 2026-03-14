@@ -111,10 +111,6 @@
 							<text class="oauth-btn-icon">微</text>
 							<text class="oauth-btn-text">微信登录</text>
 						</view>
-						<view class="oauth-btn oauth-btn-qq" @click="qqLogin">
-							<text class="oauth-btn-icon">Q</text>
-							<text class="oauth-btn-text">QQ登录</text>
-						</view>
 					</view>
 				</view>
 

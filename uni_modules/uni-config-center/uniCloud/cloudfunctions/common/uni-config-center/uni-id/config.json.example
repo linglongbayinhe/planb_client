@@ -1,0 +1,18 @@
+{
+  "passwordSecret": "passwordSecret-demo",
+  "tokenSecret": "tokenSecret-demo",
+  "tokenExpiresThreshold": 600,
+  "passwordErrorLimit": 6,
+  "bindTokenToDevice": false,
+  "passwordInvalidLimit": 6,
+  "passwordInvalidTime": 86400,
+  "multipleSessions": false,
+  "app": {
+    "weixin": {
+      "appid": "your_weixin_appid",
+      "appsecret": "your_weixin_appsecret"
+    }
+  },
+  "SMTP_USER": "your_smtp_user",
+  "SMTP_PASS": "your_smtp_pass"
+}

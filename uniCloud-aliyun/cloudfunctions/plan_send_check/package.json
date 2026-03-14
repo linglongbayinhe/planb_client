@@ -1,0 +1,19 @@
+{
+  "name": "plan_send_check",
+  "dependencies": {
+    "nodemailer": "^6.10.1"
+  },
+  "extensions": {
+    "uni-cloud-jql": {}
+  },
+  "cloudfunction-config": {
+    "triggers": [
+      {
+        "name": "timer_plan_send_check",
+        "type": "timer",
+        "config": "1 * * * * * *"
+      }
+    ],
+    "timeout": 120
+  }
+}

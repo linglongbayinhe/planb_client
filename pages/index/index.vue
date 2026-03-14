@@ -56,11 +56,12 @@
 			}
 		},
 		onLoad() {
-			uni.getSystemInfo({
-				success: (info) => {
-					this.safeAreaBottom = info.safeAreaInsets ? info.safeAreaInsets.bottom : 0
-				}
-			})
+			try {
+				const info = (typeof uni.getWindowInfo === 'function') ? uni.getWindowInfo() : null
+				this.safeAreaBottom = (info && info.safeAreaInsets && info.safeAreaInsets.bottom) || 0
+			} catch (e) {
+				this.safeAreaBottom = 0
+			}
 		},
 		methods: {
 			switchTab(index) {

@@ -240,10 +240,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     t: !$options.canSubmit ? 1 : "",
     v: common_vendor.o((...args) => $options.onSubmit && $options.onSubmit(...args)),
     w: common_vendor.o((...args) => $options.wxLogin && $options.wxLogin(...args)),
-    x: common_vendor.o((...args) => $options.qqLogin && $options.qqLogin(...args)),
-    y: common_vendor.o(() => {
+    x: common_vendor.o(() => {
     }),
-    z: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
+    y: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-5a44606c"]]);
