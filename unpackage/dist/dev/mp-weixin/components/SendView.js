@@ -55,6 +55,17 @@ const _sfc_main = {
       const month = d.getMonth() + 1;
       const day = d.getDate();
       return `${year}年${month}月${day}日`;
+    },
+    sendPlanRef() {
+      return store_index.store.sendPlan;
+    }
+  },
+  watch: {
+    sendPlanRef: {
+      handler() {
+        this.syncContentFromStore();
+      },
+      deep: true
     }
   },
   mounted() {
@@ -142,7 +153,7 @@ const _sfc_main = {
       if (!uid)
         return;
       try {
-        const obj = common_vendor.tr.importObject("send_email");
+        const obj = common_vendor._r.importObject("send_email");
         const res = await obj.updateSendEmail(email, isNew, uid);
         if (res && res.errCode && res.errCode !== "UID_REQUIRED") {
           common_vendor.index.showToast({ title: res.errMsg || "云端同步失败", icon: "none", duration: 2e3 });
@@ -156,13 +167,18 @@ const _sfc_main = {
       if (!uid)
         return;
       try {
-        const obj = common_vendor.tr.importObject("send_phone");
+        const obj = common_vendor._r.importObject("send_phone");
         const res = await obj.updateSendPhone(phone, isNew, uid);
         if (res && res.errCode && res.errCode !== "UID_REQUIRED") {
           common_vendor.index.showToast({ title: res.errMsg || "云端同步失败", icon: "none", duration: 2e3 });
         }
       } catch (e) {
         common_vendor.index.showToast({ title: e && e.message || "云端同步失败", icon: "none", duration: 2e3 });
+      }
+    },
+    onContentRequireLogin() {
+      if (!this.currentUid) {
+        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
       }
     },
     syncContentFromStore() {
@@ -174,6 +190,10 @@ const _sfc_main = {
       this.appliedCustomGuide = c;
     },
     async applyContent() {
+      if (!this.currentUid) {
+        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+        return;
+      }
       store_index.mutations.updateSendPlan({
         displayName: this.displayNameLocal,
         customGuide: this.customGuideLocal
@@ -187,7 +207,7 @@ const _sfc_main = {
       if (!uid)
         return;
       try {
-        const obj = common_vendor.tr.importObject("send_message");
+        const obj = common_vendor._r.importObject("send_message");
         const res = await obj.updateSendMessage(
           this.displayNameLocal,
           this.customGuideLocal,
@@ -218,15 +238,15 @@ const _sfc_main = {
         store_index.mutations.updateSendPlan({ enabled: true });
       }
       let uid = store_index.store.currentUser && (store_index.store.currentUser.uid || store_index.store.currentUser._id);
-      if (!uid && typeof common_vendor.tr !== "undefined" && typeof common_vendor.tr.getCurrentUserInfo === "function") {
+      if (!uid && typeof common_vendor._r !== "undefined" && typeof common_vendor._r.getCurrentUserInfo === "function") {
         try {
-          const u = await common_vendor.tr.getCurrentUserInfo();
+          const u = await common_vendor._r.getCurrentUserInfo();
           uid = u && (u.uid || u._id);
         } catch (e) {
         }
       }
       try {
-        const obj = common_vendor.tr.importObject("set_enable_sending");
+        const obj = common_vendor._r.importObject("set_enable_sending");
         const res = await obj.setEnableSending(newEnabled, uid || void 0);
         if (res && res.errCode) {
           const msg = res.errCode === "UID_REQUIRED" ? "请先登录以同步到云端" : res.errMsg || "同步失败";
@@ -242,13 +262,13 @@ const _sfc_main = {
         return;
       }
       try {
-        const obj = common_vendor.tr.importObject("send_time");
+        const obj = common_vendor._r.importObject("send_time");
         const res = await obj.updateSendTime(Date.now() + 3e4, this.currentUid);
         if (res && res.errCode) {
           common_vendor.index.showToast({ title: res.errMsg || "设置失败", icon: "none" });
           return;
         }
-        common_vendor.index.showToast({ title: "已设置 30 秒后触发", icon: "success" });
+        common_vendor.index.showToast({ title: "已更新预期日期为 30 秒后", icon: "success" });
       } catch (e) {
         common_vendor.index.showToast({ title: e && e.message || "设置失败", icon: "none" });
       }
@@ -262,18 +282,18 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     c: $options.emails.length < $data.maxEmails
   }, $options.emails.length < $data.maxEmails ? {
     d: $data.emailInput,
-    e: common_vendor.o(($event) => $data.emailInput = $event.detail.value),
+    e: common_vendor.o(($event) => $data.emailInput = $event.detail.value, "ba"),
     f: !$data.emailInput.trim() ? 1 : "",
-    g: common_vendor.o((...args) => $options.addEmail && $options.addEmail(...args))
+    g: common_vendor.o((...args) => $options.addEmail && $options.addEmail(...args), "b6")
   } : {}, {
     h: $options.emails.length < $data.maxEmails
   }, $options.emails.length < $data.maxEmails ? {} : {}, {
     i: $options.phones.length < $data.maxPhones
   }, $options.phones.length < $data.maxPhones ? {
     j: $data.phoneInput,
-    k: common_vendor.o(($event) => $data.phoneInput = $event.detail.value),
+    k: common_vendor.o(($event) => $data.phoneInput = $event.detail.value, "4e"),
     l: !$data.phoneInput.trim() ? 1 : "",
-    m: common_vendor.o((...args) => $options.addPhone && $options.addPhone(...args))
+    m: common_vendor.o((...args) => $options.addPhone && $options.addPhone(...args), "60")
   } : {}, {
     n: $options.phones.length < $data.maxPhones || $options.emails.length > 0
   }, $options.phones.length < $data.maxPhones || $options.emails.length > 0 ? {} : {}, {
@@ -295,32 +315,36 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     }),
     r: common_vendor.t($data.maxPhones),
-    s: $data.displayNameLocal,
-    t: common_vendor.o(($event) => $data.displayNameLocal = $event.detail.value),
-    v: common_vendor.t($data.notifyExpanded ? "∧" : "∨"),
-    w: common_vendor.o((...args) => $options.toggleNotifyExpand && $options.toggleNotifyExpand(...args)),
-    x: $data.notifyExpanded
+    s: !$options.currentUid,
+    t: $data.displayNameLocal,
+    v: common_vendor.o(($event) => $data.displayNameLocal = $event.detail.value, "6e"),
+    w: common_vendor.o((...args) => $options.onContentRequireLogin && $options.onContentRequireLogin(...args), "24"),
+    x: common_vendor.t($data.notifyExpanded ? "∧" : "∨"),
+    y: common_vendor.o((...args) => $options.toggleNotifyExpand && $options.toggleNotifyExpand(...args), "dc"),
+    z: $data.notifyExpanded
   }, $data.notifyExpanded ? {
-    y: common_vendor.t($data.displayNameLocal || "（未设置）"),
-    z: common_vendor.t($data.displayNameLocal || "（未设置）"),
-    A: $data.customGuideLocal,
-    B: common_vendor.o(($event) => $data.customGuideLocal = $event.detail.value)
+    A: common_vendor.t($data.displayNameLocal || "（未设置）"),
+    B: common_vendor.t($data.displayNameLocal || "（未设置）"),
+    C: !$options.currentUid,
+    D: common_vendor.o((...args) => $options.onContentRequireLogin && $options.onContentRequireLogin(...args), "99"),
+    E: $data.customGuideLocal,
+    F: common_vendor.o(($event) => $data.customGuideLocal = $event.detail.value, "23")
   } : {}, {
-    C: $options.contentDirty
+    G: $options.contentDirty
   }, $options.contentDirty ? {
-    D: common_vendor.o((...args) => $options.applyContent && $options.applyContent(...args))
+    H: common_vendor.o((...args) => $options.applyContent && $options.applyContent(...args), "ec")
   } : {}, {
-    E: common_vendor.t($options.formattedSendDate),
-    F: common_vendor.t($options.intervalDays),
-    G: $options.intervalDays,
-    H: common_vendor.o((...args) => $options.onSliderChange && $options.onSliderChange(...args)),
-    I: common_vendor.o((...args) => $options.onSliderChanging && $options.onSliderChanging(...args)),
-    J: $options.planEnabled ? "/static/icons/pause.png" : "/static/icons/play.png",
-    K: common_vendor.t($options.planEnabled ? "关闭发送计划" : "开启发送计划"),
-    L: common_vendor.n($options.planEnabled ? "plan-btn-off" : "plan-btn-on"),
-    M: common_vendor.o((...args) => $options.togglePlan && $options.togglePlan(...args)),
-    N: common_vendor.o((...args) => $options.trigger30Sec && $options.trigger30Sec(...args)),
-    O: ($data.statusBarHeight || 0) + "px"
+    I: common_vendor.t($options.formattedSendDate),
+    J: common_vendor.t($options.intervalDays),
+    K: $options.intervalDays,
+    L: common_vendor.o((...args) => $options.onSliderChange && $options.onSliderChange(...args), "b1"),
+    M: common_vendor.o((...args) => $options.onSliderChanging && $options.onSliderChanging(...args), "bc"),
+    N: $options.planEnabled ? "/static/icons/pause.png" : "/static/icons/play.png",
+    O: common_vendor.t($options.planEnabled ? "关闭发送计划" : "开启发送计划"),
+    P: common_vendor.n($options.planEnabled ? "plan-btn-off" : "plan-btn-on"),
+    Q: common_vendor.o((...args) => $options.togglePlan && $options.togglePlan(...args), "00"),
+    R: common_vendor.o((...args) => $options.trigger30Sec && $options.trigger30Sec(...args), "e5"),
+    S: ($data.statusBarHeight || 0) + "px"
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-b8a25f91"]]);

@@ -10,6 +10,13 @@ const defaultPlan = {
 	customGuide: ''
 }
 
+function normalizeTokenExpired(raw) {
+	const n = Number(raw)
+	if (!n || !isFinite(n)) return 0
+	// 兼容秒级时间戳
+	return n < 1e12 ? n * 1000 : n
+}
+
 function loadJSON(key, fallback) {
 	try {
 		const v = uni.getStorageSync(key)
@@ -68,16 +75,70 @@ export const mutations = {
 		uni.setStorageSync('plan', JSON.stringify(store.sendPlan))
 	},
 
+	setSendPlanFromCloud(payload) {
+		const p = payload || {}
+		const safeInterval = Number(store.sendPlan && store.sendPlan.intervalDays) || defaultPlan.intervalDays
+		store.sendPlan = Object.assign({}, defaultPlan, {
+			intervalDays: safeInterval,
+			enabled: !!p.enabled,
+			sendDate: p.sendDate || null,
+			emails: Array.isArray(p.emails) ? p.emails : [],
+			phones: Array.isArray(p.phones) ? p.phones : [],
+			displayName: p.displayName || '',
+			customGuide: p.customGuide || ''
+		})
+		uni.setStorageSync('plan', JSON.stringify(store.sendPlan))
+	},
+
+	applyUserBootstrap(payload) {
+		const user = payload && payload.user ? payload.user : null
+		const plan = payload && payload.plan ? payload.plan : {}
+		this.setUser(user)
+		this.setSendPlanFromCloud(plan)
+	},
+
 	setUser(user) {
 		store.currentUser = user
 		uni.setStorageSync('user', JSON.stringify(user))
 	},
 
-	logout() {
+	saveAuthToken(newToken) {
+		const token = newToken && newToken.token
+		const tokenExpired = normalizeTokenExpired(newToken && newToken.tokenExpired)
+		if (!token) return
+		uni.setStorageSync('uni_id_token', token)
+		if (tokenExpired > 0) {
+			uni.setStorageSync('uni_id_token_expired', tokenExpired)
+		}
+	},
+
+	getStoredTokenInfo() {
+		try {
+			const token = uni.getStorageSync('uni_id_token') || ''
+			const tokenExpiredRaw = uni.getStorageSync('uni_id_token_expired')
+			const tokenExpired = normalizeTokenExpired(tokenExpiredRaw)
+			return { token, tokenExpired }
+		} catch (e) {
+			return { token: '', tokenExpired: 0 }
+		}
+	},
+
+	hasValidSession() {
+		const tokenInfo = this.getStoredTokenInfo()
+		if (!tokenInfo.token) return false
+		if (!tokenInfo.tokenExpired) return true
+		return Date.now() < tokenInfo.tokenExpired
+	},
+
+	clearAuthSession() {
 		store.currentUser = null
 		uni.removeStorageSync('user')
 		uni.removeStorageSync('uni_id_token')
 		uni.removeStorageSync('uni_id_token_expired')
+	},
+
+	logout() {
+		this.clearAuthSession()
 		uni.removeStorageSync('users')
 	},
 

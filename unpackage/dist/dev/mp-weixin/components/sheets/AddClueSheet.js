@@ -118,10 +118,10 @@ const _sfc_main = {
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args)),
+    a: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args), "67"),
     b: !$options.canSave ? 1 : "",
     c: !$options.canSave ? 1 : "",
-    d: common_vendor.o((...args) => $options.onSave && $options.onSave(...args)),
+    d: common_vendor.o((...args) => $options.onSave && $options.onSave(...args), "98"),
     e: common_vendor.f($data.types, (t, k0, i0) => {
       return {
         a: common_vendor.t(t.label),
@@ -135,41 +135,41 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $data.validationError ? {
     g: common_vendor.t($data.validationError)
   } : {}, {
-    h: common_vendor.o([($event) => $data.form.name = $event.detail.value, ($event) => $data.validationError = ""]),
+    h: common_vendor.o([($event) => $data.form.name = $event.detail.value, ($event) => $data.validationError = ""], "4a"),
     i: $data.form.name,
     j: $data.form.location,
-    k: common_vendor.o(($event) => $data.form.location = $event.detail.value),
+    k: common_vendor.o(($event) => $data.form.location = $event.detail.value, "08"),
     l: $data.form.relation,
-    m: common_vendor.o(($event) => $data.form.relation = $event.detail.value),
+    m: common_vendor.o(($event) => $data.form.relation = $event.detail.value, "d9"),
     n: $data.selectedType === "important",
     o: $data.form.note,
-    p: common_vendor.o(($event) => $data.form.note = $event.detail.value),
+    p: common_vendor.o(($event) => $data.form.note = $event.detail.value, "94"),
     q: $data.selectedType === "important",
-    r: common_vendor.o([($event) => $data.form.platform = $event.detail.value, ($event) => $data.validationError = ""]),
+    r: common_vendor.o([($event) => $data.form.platform = $event.detail.value, ($event) => $data.validationError = ""], "7a"),
     s: $data.form.platform,
     t: $data.form.account,
-    v: common_vendor.o(($event) => $data.form.account = $event.detail.value),
+    v: common_vendor.o(($event) => $data.form.account = $event.detail.value, "ca"),
     w: $data.form.relation,
-    x: common_vendor.o(($event) => $data.form.relation = $event.detail.value),
+    x: common_vendor.o(($event) => $data.form.relation = $event.detail.value, "7b"),
     y: $data.selectedType === "digital",
     z: $data.form.note,
-    A: common_vendor.o(($event) => $data.form.note = $event.detail.value),
+    A: common_vendor.o(($event) => $data.form.note = $event.detail.value, "a4"),
     B: $data.selectedType === "digital",
-    C: common_vendor.o([($event) => $data.form.title = $event.detail.value, ($event) => $data.validationError = ""]),
+    C: common_vendor.o([($event) => $data.form.title = $event.detail.value, ($event) => $data.validationError = ""], "ee"),
     D: $data.form.title,
     E: $data.form.target,
-    F: common_vendor.o(($event) => $data.form.target = $event.detail.value),
+    F: common_vendor.o(($event) => $data.form.target = $event.detail.value, "d1"),
     G: $data.form.background,
-    H: common_vendor.o(($event) => $data.form.background = $event.detail.value),
+    H: common_vendor.o(($event) => $data.form.background = $event.detail.value, "10"),
     I: $data.selectedType === "family",
     J: $data.form.note,
-    K: common_vendor.o(($event) => $data.form.note = $event.detail.value),
+    K: common_vendor.o(($event) => $data.form.note = $event.detail.value, "9c"),
     L: $data.selectedType === "family",
     M: $data.formContentVisible ? 1 : "",
     N: $data.formBodyAnimate ? 1 : "",
     O: common_vendor.o(() => {
-    }),
-    P: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args))
+    }, "fc"),
+    P: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args), "0c")
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-4f4b4649"]]);

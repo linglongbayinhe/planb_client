@@ -60,58 +60,58 @@ const _sfc_main = {
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args)),
+    a: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args), "da"),
     b: !$options.canSave ? 1 : "",
     c: !$options.canSave ? 1 : "",
-    d: common_vendor.o((...args) => $options.onSave && $options.onSave(...args)),
+    d: common_vendor.o((...args) => $options.onSave && $options.onSave(...args), "16"),
     e: common_vendor.t($options.typeLabel),
     f: $options.typeColor,
     g: $options.typeColor + "22",
     h: $props.clue.type === "important"
   }, $props.clue.type === "important" ? {
     i: $data.form.name,
-    j: common_vendor.o(($event) => $data.form.name = $event.detail.value),
+    j: common_vendor.o(($event) => $data.form.name = $event.detail.value, "8d"),
     k: $data.form.location,
-    l: common_vendor.o(($event) => $data.form.location = $event.detail.value),
+    l: common_vendor.o(($event) => $data.form.location = $event.detail.value, "af"),
     m: $data.form.relation,
-    n: common_vendor.o(($event) => $data.form.relation = $event.detail.value)
+    n: common_vendor.o(($event) => $data.form.relation = $event.detail.value, "7a")
   } : {}, {
     o: $props.clue.type === "important"
   }, $props.clue.type === "important" ? {
     p: $data.form.note,
-    q: common_vendor.o(($event) => $data.form.note = $event.detail.value)
+    q: common_vendor.o(($event) => $data.form.note = $event.detail.value, "f9")
   } : {}, {
     r: $props.clue.type === "digital"
   }, $props.clue.type === "digital" ? {
     s: $data.form.platform,
-    t: common_vendor.o(($event) => $data.form.platform = $event.detail.value),
+    t: common_vendor.o(($event) => $data.form.platform = $event.detail.value, "91"),
     v: $data.form.account,
-    w: common_vendor.o(($event) => $data.form.account = $event.detail.value),
+    w: common_vendor.o(($event) => $data.form.account = $event.detail.value, "fc"),
     x: $data.form.relation,
-    y: common_vendor.o(($event) => $data.form.relation = $event.detail.value)
+    y: common_vendor.o(($event) => $data.form.relation = $event.detail.value, "26")
   } : {}, {
     z: $props.clue.type === "digital"
   }, $props.clue.type === "digital" ? {
     A: $data.form.note,
-    B: common_vendor.o(($event) => $data.form.note = $event.detail.value)
+    B: common_vendor.o(($event) => $data.form.note = $event.detail.value, "d0")
   } : {}, {
     C: $props.clue.type === "family"
   }, $props.clue.type === "family" ? {
     D: $data.form.title,
-    E: common_vendor.o(($event) => $data.form.title = $event.detail.value),
+    E: common_vendor.o(($event) => $data.form.title = $event.detail.value, "ff"),
     F: $data.form.target,
-    G: common_vendor.o(($event) => $data.form.target = $event.detail.value),
+    G: common_vendor.o(($event) => $data.form.target = $event.detail.value, "d1"),
     H: $data.form.background,
-    I: common_vendor.o(($event) => $data.form.background = $event.detail.value)
+    I: common_vendor.o(($event) => $data.form.background = $event.detail.value, "32")
   } : {}, {
     J: $props.clue.type === "family"
   }, $props.clue.type === "family" ? {
     K: $data.form.note,
-    L: common_vendor.o(($event) => $data.form.note = $event.detail.value)
+    L: common_vendor.o(($event) => $data.form.note = $event.detail.value, "db")
   } : {}, {
     M: common_vendor.o(() => {
-    }),
-    N: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args))
+    }, "a3"),
+    N: common_vendor.o((...args) => $options.onCancel && $options.onCancel(...args), "30")
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-dd9903cc"]]);

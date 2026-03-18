@@ -42,7 +42,7 @@ const _sfc_main = {
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return {
-    a: common_vendor.o((...args) => $options.onClose && $options.onClose(...args)),
+    a: common_vendor.o((...args) => $options.onClose && $options.onClose(...args), "4e"),
     b: common_vendor.f($data.themes, (theme, k0, i0) => {
       return common_vendor.e({
         a: common_vendor.n("preview-btn-" + theme.key),
@@ -61,7 +61,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       });
     }),
     c: common_vendor.t($data.previewDays),
-    d: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
+    d: common_vendor.o((...args) => $options.onClose && $options.onClose(...args), "f1")
   };
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-e57b6ea5"]]);

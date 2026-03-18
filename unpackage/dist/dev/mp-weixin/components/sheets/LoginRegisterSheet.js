@@ -3,247 +3,97 @@ const common_vendor = require("../../common/vendor.js");
 const store_index = require("../../store/index.js");
 const _sfc_main = {
   name: "LoginRegisterSheet",
-  emits: ["close"],
-  data() {
-    return {
-      mode: "login",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      nickname: "",
-      errorMsg: ""
-    };
-  },
-  computed: {
-    canSubmit() {
-      if (!this.email.trim() || !this.password.trim())
-        return false;
-      if (this.mode === "register") {
-        return this.password.length >= 6 && this.password === this.confirmPassword;
-      }
-      return true;
-    },
-    confirmPasswordMismatch() {
-      if (this.mode !== "register")
-        return false;
-      return this.confirmPassword.length > 0 && this.password !== this.confirmPassword;
+  props: {
+    cancelMode: {
+      type: String,
+      default: "close"
+      // close | exit
     }
   },
+  emits: ["close", "success", "cancel"],
   methods: {
-    onClose() {
-      this.$emit("close");
+    resolveProvider() {
+      let provider = "";
+      provider = "weixin";
+      return provider;
     },
-    clearError() {
-      this.errorMsg = "";
-      if (this.mode === "login") {
-        this.confirmPassword = "";
-      }
-    },
-    isValidEmail(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    },
-    async onSubmit() {
-      if (!this.canSubmit)
-        return;
-      this.errorMsg = "";
-      if (!this.isValidEmail(this.email)) {
-        this.errorMsg = "邮箱格式无效";
+    async handleAuthorize() {
+      const provider = this.resolveProvider();
+      if (!provider) {
+        common_vendor.index.showToast({ title: "当前平台授权登录暂未开通", icon: "none" });
         return;
       }
-      if (this.mode === "login") {
-        await this.doLogin();
-      } else {
-        if (this.password.length < 6) {
-          this.errorMsg = "密码至少需要6位";
-          return;
-        }
-        if (this.password !== this.confirmPassword) {
-          this.errorMsg = "密码与确认密码不一致";
-          return;
-        }
-        await this.doRegister();
-      }
-    },
-    async doLogin() {
-      common_vendor.index.showLoading({ title: "登录中，请稍后...", mask: true });
+      common_vendor.index.showLoading({ title: "授权中...", mask: true });
       try {
-        const obj = common_vendor.tr.importObject("register", { customUI: true });
-        const res = await obj.login(this.email.trim(), this.password);
-        if (res.errCode === 0) {
-          this.saveTokenAndUser(res.newToken, res.userInfo);
-          this.$emit("close");
-          const uid = res.userInfo && res.userInfo._id;
-          if (uid) {
-            common_vendor.tr.importObject("login", { customUI: true }).recordLoginTime(uid).catch(() => {
-            });
-          }
-        } else {
-          this.errorMsg = res.errMsg || (res.errCode === "USER_NOT_FOUND" ? "该邮箱尚未注册" : "登录失败");
+        const loginRes = await new Promise((resolve, reject) => {
+          common_vendor.index.login({
+            provider,
+            success: resolve,
+            fail: reject
+          });
+        });
+        const code = loginRes && loginRes.code;
+        if (!code)
+          throw new Error("未获取到登录凭证");
+        const obj = common_vendor._r.importObject("auth_provider", { customUI: true });
+        const res = await obj.loginByProvider(provider, code, {});
+        if (!res || res.code !== 0 || !res.token) {
+          common_vendor.index.__f__("error", "at components/sheets/LoginRegisterSheet.vue:68", "[auth_provider/loginByProvider] fail result:", res);
+          throw new Error(res && res.message || "授权登录失败");
         }
+        store_index.mutations.saveAuthToken({
+          token: res.token,
+          tokenExpired: res.tokenExpired
+        });
+        const profileObj = common_vendor._r.importObject("user_profile", { customUI: true });
+        const profileRes = await profileObj.getBootstrap();
+        if (profileRes && profileRes.errCode === 0) {
+          store_index.mutations.applyUserBootstrap({
+            user: profileRes.userInfo,
+            plan: profileRes.plan
+          });
+        } else if (res.userInfo) {
+          store_index.mutations.setUser({
+            _id: res.userInfo._id,
+            email: res.userInfo.email || "",
+            nickname: res.userInfo.nickname || "",
+            avatar: res.userInfo.avatar || ""
+          });
+        }
+        this.$emit("success");
+        this.$emit("close");
       } catch (e) {
-        this.errorMsg = e.message || "网络异常，请重试";
+        common_vendor.index.showToast({ title: e && e.message || "授权登录失败", icon: "none" });
       } finally {
         common_vendor.index.hideLoading();
       }
     },
-    async doRegister() {
-      try {
-        const obj = common_vendor.tr.importObject("register");
-        const res = await obj.registerUser(this.email.trim(), this.password, this.nickname);
-        if (res.errCode === 0) {
-          this.saveTokenAndUser(res.newToken, res.userInfo);
-          this.$emit("close");
-        } else {
-          this.errorMsg = res.errMsg || (res.errCode === "EMAIL_EXISTS" ? "该邮箱已注册" : "注册失败");
-        }
-      } catch (e) {
-        this.errorMsg = e.message || "网络异常，请重试";
-      }
-    },
-    saveTokenAndUser(newToken, userInfo) {
-      if (newToken && newToken.token) {
-        common_vendor.index.setStorageSync("uni_id_token", newToken.token);
-        if (newToken.tokenExpired != null) {
-          common_vendor.index.setStorageSync("uni_id_token_expired", newToken.tokenExpired);
-        }
-      }
-      const u = userInfo || {};
-      store_index.mutations.setUser({
-        _id: u._id,
-        email: u.email || this.email || "",
-        nickname: u.nickname || this.nickname || "",
-        avatar: u.avatar || ""
-      });
-    },
-    getStoredUsers() {
-      try {
-        const v = common_vendor.index.getStorageSync("users");
-        return v ? JSON.parse(v) : [];
-      } catch (e) {
-        return [];
-      }
-    },
-    async wxLogin() {
-      try {
-        let nickName = "";
-        let avatarUrl = "";
-        try {
-          const profileRes = await common_vendor.index.getUserProfile({ desc: "用于完善用户资料" });
-          if (profileRes && profileRes.userInfo) {
-            nickName = profileRes.userInfo.nickName || "";
-            avatarUrl = profileRes.userInfo.avatarUrl || "";
-          }
-        } catch (pfErr) {
-        }
-        const loginRes = await new Promise((resolve, reject) => {
-          common_vendor.index.login({
-            provider: "weixin",
-            success: resolve,
-            fail: reject
+    handleCancel() {
+      this.$emit("cancel");
+      if (this.cancelMode === "exit") {
+        if (typeof common_vendor.index.exitMiniProgram === "function") {
+          common_vendor.index.exitMiniProgram({
+            fail: () => {
+              common_vendor.index.showToast({ title: "已取消登录", icon: "none" });
+            }
           });
-        });
-        if (loginRes && loginRes.code) {
-          await this.sendCodeToBackend("weixin", loginRes.code, { nickName, avatarUrl });
         } else {
-          common_vendor.index.showToast({ title: "微信登录失败，未获取到 code", icon: "none" });
+          common_vendor.index.showToast({ title: "已取消登录", icon: "none" });
         }
-      } catch (e) {
-        common_vendor.index.showToast({ title: e && e.errMsg || "微信登录失败", icon: "none" });
-      }
-    },
-    async qqLogin() {
-      try {
-        const loginRes = await new Promise((resolve, reject) => {
-          common_vendor.index.login({
-            provider: "qq",
-            success: resolve,
-            fail: reject
-          });
-        });
-        if (loginRes.code) {
-          await this.sendCodeToBackend("qq", loginRes.code);
-        } else {
-          common_vendor.index.showToast({ title: "QQ登录失败，未获取到 code", icon: "none" });
-        }
-      } catch (e) {
-        common_vendor.index.showToast({ title: e.errMsg || "QQ登录失败", icon: "none" });
-      }
-    },
-    async sendCodeToBackend(provider, code, profile) {
-      common_vendor.index.showLoading({ title: "登录中...", mask: true });
-      try {
-        if (provider === "weixin") {
-          const obj = common_vendor.tr.importObject("login_wechat", { customUI: true });
-          const nickName = profile && profile.nickName || "";
-          const avatarUrl = profile && profile.avatarUrl || "";
-          const result = await obj.login(code, nickName, avatarUrl);
-          common_vendor.index.hideLoading();
-          if (result && result.code === 0 && result.token) {
-            this.saveTokenAndUser(
-              { token: result.token },
-              result.userInfo || {}
-            );
-            this.$emit("close");
-          } else {
-            common_vendor.index.showToast({ title: result && result.message || "微信登录失败", icon: "none" });
-          }
-        } else {
-          const obj = common_vendor.tr.importObject("register", { customUI: true });
-          const res = await obj.oauthLogin(provider, code);
-          common_vendor.index.hideLoading();
-          if (res && res.errCode === 0) {
-            this.saveTokenAndUser(res.newToken, res.userInfo);
-            this.$emit("close");
-          } else {
-            common_vendor.index.showToast({ title: res && res.errMsg || "登录失败", icon: "none" });
-          }
-        }
-      } catch (e) {
-        common_vendor.index.hideLoading();
-        common_vendor.index.showToast({ title: e && e.message || "网络异常，请重试", icon: "none" });
+      } else {
+        this.$emit("close");
       }
     }
   }
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
-  return common_vendor.e({
-    a: common_vendor.o((...args) => $options.onClose && $options.onClose(...args)),
-    b: common_vendor.t($data.mode === "login" ? "登录" : "注册"),
-    c: $data.mode === "login" ? 1 : "",
-    d: common_vendor.o(($event) => {
-      $data.mode = "login";
-      $options.clearError();
-    }),
-    e: $data.mode === "register" ? 1 : "",
-    f: common_vendor.o(($event) => {
-      $data.mode = "register";
-      $options.clearError();
-    }),
-    g: $data.errorMsg
-  }, $data.errorMsg ? {
-    h: common_vendor.t($data.errorMsg)
-  } : {}, {
-    i: $data.email,
-    j: common_vendor.o(($event) => $data.email = $event.detail.value),
-    k: $data.password,
-    l: common_vendor.o(($event) => $data.password = $event.detail.value),
-    m: $data.mode === "register"
-  }, $data.mode === "register" ? common_vendor.e({
-    n: $data.confirmPassword,
-    o: common_vendor.o(($event) => $data.confirmPassword = $event.detail.value),
-    p: $options.confirmPasswordMismatch
-  }, $options.confirmPasswordMismatch ? {} : {}, {
-    q: $data.nickname,
-    r: common_vendor.o(($event) => $data.nickname = $event.detail.value)
-  }) : {}, {
-    s: common_vendor.t($data.mode === "login" ? "登录" : "注册"),
-    t: !$options.canSubmit ? 1 : "",
-    v: common_vendor.o((...args) => $options.onSubmit && $options.onSubmit(...args)),
-    w: common_vendor.o((...args) => $options.wxLogin && $options.wxLogin(...args)),
-    x: common_vendor.o(() => {
-    }),
-    y: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
-  });
+  return {
+    a: common_vendor.o((...args) => $options.handleAuthorize && $options.handleAuthorize(...args), "60"),
+    b: common_vendor.o((...args) => $options.handleCancel && $options.handleCancel(...args), "a0"),
+    c: common_vendor.o(() => {
+    }, "5b"),
+    d: common_vendor.o((...args) => $options.handleCancel && $options.handleCancel(...args), "dc")
+  };
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-5a44606c"]]);
 wx.createComponent(Component);

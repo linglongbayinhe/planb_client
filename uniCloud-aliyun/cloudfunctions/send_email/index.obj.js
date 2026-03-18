@@ -1,4 +1,4 @@
-// 云对象：发送页面添加/删除邮箱时，同步到云数据库 users 表的 send_emails 字段
+// 云对象：发送页面添加/删除邮箱时，同步到云数据库 uni-id-users 表的 send_emails 字段
 'use strict'
 
 const MAX_EMAILS = 3
@@ -14,7 +14,7 @@ module.exports = {
 	},
 
 	/**
-	 * 添加或从 users 表移除一个邮箱，更新 send_emails 数组
+	 * 添加或从 uni-id-users 表移除一个邮箱，更新 send_emails 数组
 	 * @param {string} email  邮箱地址
 	 * @param {boolean} isNew  true=新增（加入列表），false=删除（从列表移除）
 	 * @param {string} [uid]   用户 ID；不传时从 uni-id token 解析
@@ -49,11 +49,11 @@ module.exports = {
 
 		const db = uniCloud.database()
 		try {
-			const docRes = await db.collection('users').doc(uid).get()
-			if (!docRes.data || docRes.data.length === 0) {
+			const docRes = await db.collection('uni-id-users').doc(uid).get()
+			const user = (docRes && docRes.data && docRes.data[0]) || null
+			if (!user) {
 				return { errCode: 'USER_NOT_FOUND', errMsg: '用户不存在' }
 			}
-			const user = docRes.data[0]
 			let list = Array.isArray(user.send_emails) ? user.send_emails.map(x => String(x).trim().toLowerCase()) : []
 
 			if (isNew) {
@@ -66,7 +66,7 @@ module.exports = {
 				list = list.filter(x => x !== e)
 			}
 
-			await db.collection('users').doc(uid).update({ send_emails: list })
+			await db.collection('uni-id-users').doc(uid).update({ send_emails: list })
 			return { success: true }
 		} catch (err) {
 			return { errCode: 'DB_ERROR', errMsg: err.message || '更新失败' }

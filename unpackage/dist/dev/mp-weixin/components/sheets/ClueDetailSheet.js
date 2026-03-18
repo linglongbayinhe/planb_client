@@ -88,8 +88,8 @@ if (!Array) {
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o((...args) => $options.openEditSheet && $options.openEditSheet(...args)),
-    b: common_vendor.o((...args) => $options.onClose && $options.onClose(...args)),
+    a: common_vendor.o((...args) => $options.openEditSheet && $options.openEditSheet(...args), "bc"),
+    b: common_vendor.o((...args) => $options.onClose && $options.onClose(...args), "61"),
     c: common_vendor.t($options.typeEmoji),
     d: common_vendor.t($options.typeLabel),
     e: $options.typeColor,
@@ -152,18 +152,18 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     K: common_vendor.t($props.clue.note)
   } : {}) : {}, {
     L: common_vendor.t($options.formattedUpdatedAt),
-    M: common_vendor.o((...args) => $options.confirmDelete && $options.confirmDelete(...args)),
+    M: common_vendor.o((...args) => $options.confirmDelete && $options.confirmDelete(...args), "0c"),
     N: common_vendor.o(() => {
-    }),
+    }, "b2"),
     O: $data.showEditSheet
   }, $data.showEditSheet ? {
-    P: common_vendor.o(($event) => $data.showEditSheet = false),
-    Q: common_vendor.o($options.onEditSaved),
+    P: common_vendor.o(($event) => $data.showEditSheet = false, "54"),
+    Q: common_vendor.o($options.onEditSaved, "35"),
     R: common_vendor.p({
       clue: $data.currentClue
     })
   } : {}, {
-    S: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
+    S: common_vendor.o((...args) => $options.onClose && $options.onClose(...args), "45")
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-866cb5f9"]]);

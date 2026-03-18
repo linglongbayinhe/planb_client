@@ -272,12 +272,12 @@ if (!Array) {
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: $data.statusBarHeight + "px",
-    b: common_vendor.o((...args) => $options.openAddSheet && $options.openAddSheet(...args)),
-    c: common_vendor.o([($event) => $data.searchText = $event.detail.value, (...args) => $options.onSearch && $options.onSearch(...args)]),
+    b: common_vendor.o((...args) => $options.openAddSheet && $options.openAddSheet(...args), "3d"),
+    c: common_vendor.o([($event) => $data.searchText = $event.detail.value, (...args) => $options.onSearch && $options.onSearch(...args)], "9b"),
     d: $data.searchText,
     e: $data.searchText
   }, $data.searchText ? {
-    f: common_vendor.o((...args) => $options.clearSearch && $options.clearSearch(...args))
+    f: common_vendor.o((...args) => $options.clearSearch && $options.clearSearch(...args), "0b")
   } : {}, {
     g: common_vendor.f($options.displayCategories, (cat, i, i0) => {
       return {
@@ -295,15 +295,15 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         l: common_vendor.o((...args) => $options.onTagTouchEnd && $options.onTagTouchEnd(...args), cat.key)
       };
     }),
-    h: common_vendor.o((...args) => $options.onFilterRowTouchMove && $options.onFilterRowTouchMove(...args)),
+    h: common_vendor.o((...args) => $options.onFilterRowTouchMove && $options.onFilterRowTouchMove(...args), "b6"),
     i: $data.filterScrollLeft,
-    j: common_vendor.o((...args) => $options.onFilterScroll && $options.onFilterScroll(...args)),
-    k: common_vendor.o((...args) => $options.openExportSheet && $options.openExportSheet(...args)),
+    j: common_vendor.o((...args) => $options.onFilterScroll && $options.onFilterScroll(...args), "94"),
+    k: common_vendor.o((...args) => $options.openExportSheet && $options.openExportSheet(...args), "50"),
     l: common_vendor.t($options.filteredClues.length),
     m: $options.filteredClues.length === 0
   }, $options.filteredClues.length === 0 ? {
     n: common_vendor.t("\n"),
-    o: common_vendor.o((...args) => $options.openAddSheet && $options.openAddSheet(...args))
+    o: common_vendor.o((...args) => $options.openAddSheet && $options.openAddSheet(...args), "df")
   } : {
     p: common_vendor.f($options.filteredClues, (clue, k0, i0) => {
       return common_vendor.e({
@@ -329,24 +329,24 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, {
     q: $data.showAddSheet
   }, $data.showAddSheet ? {
-    r: common_vendor.o(($event) => $data.showAddSheet = false),
-    s: common_vendor.o($options.onClueSaved),
+    r: common_vendor.o(($event) => $data.showAddSheet = false, "6d"),
+    s: common_vendor.o($options.onClueSaved, "55"),
     t: common_vendor.p({
       ["initial-type"]: $data.currentCategory !== "all" ? $data.currentCategory : "important"
     })
   } : {}, {
     v: $data.showExportSheet
   }, $data.showExportSheet ? {
-    w: common_vendor.o(($event) => $data.showExportSheet = false)
+    w: common_vendor.o(($event) => $data.showExportSheet = false, "13")
   } : {}, {
     x: $data.showDetailSheet && $data.selectedClue
   }, $data.showDetailSheet && $data.selectedClue ? {
     y: common_vendor.o(($event) => {
       $data.showDetailSheet = false;
       $data.selectedClue = null;
-    }),
-    z: common_vendor.o($options.onClueUpdated),
-    A: common_vendor.o($options.onClueDeleted),
+    }, "a1"),
+    z: common_vendor.o($options.onClueUpdated, "e2"),
+    A: common_vendor.o($options.onClueDeleted, "cd"),
     B: common_vendor.p({
       clue: $data.selectedClue
     })

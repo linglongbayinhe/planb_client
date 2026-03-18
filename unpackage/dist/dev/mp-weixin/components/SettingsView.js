@@ -68,6 +68,10 @@ const _sfc_main = {
       });
     },
     confirmReset() {
+      if (!this.currentUser) {
+        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+        return;
+      }
       common_vendor.index.showModal({
         title: "重置并删除本地数据",
         content: "此操作将清除所有线索和发送计划，不可恢复。确定继续？",
@@ -111,25 +115,25 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, !$options.currentUser ? {} : {}, {
     k: $options.currentUser
   }, $options.currentUser ? {
-    l: common_vendor.o((...args) => $options.confirmLogout && $options.confirmLogout(...args))
+    l: common_vendor.o((...args) => $options.confirmLogout && $options.confirmLogout(...args), "6a")
   } : {}, {
-    m: common_vendor.o((...args) => $options.onAccountTap && $options.onAccountTap(...args)),
+    m: common_vendor.o((...args) => $options.onAccountTap && $options.onAccountTap(...args), "fe"),
     n: common_vendor.t($options.themeLabel),
-    o: common_vendor.o(($event) => $data.showThemePicker = true),
+    o: common_vendor.o(($event) => $data.showThemePicker = true, "58"),
     p: common_vendor.t($options.languageLabel),
-    q: common_vendor.o(($event) => $data.showLanguagePicker = true),
-    r: common_vendor.o((...args) => $options.confirmReset && $options.confirmReset(...args)),
+    q: common_vendor.o(($event) => $data.showLanguagePicker = true, "f4"),
+    r: common_vendor.o((...args) => $options.confirmReset && $options.confirmReset(...args), "24"),
     s: $data.showLoginSheet
   }, $data.showLoginSheet ? {
-    t: common_vendor.o(($event) => $data.showLoginSheet = false)
+    t: common_vendor.o(($event) => $data.showLoginSheet = false, "d3")
   } : {}, {
     v: $data.showThemePicker
   }, $data.showThemePicker ? {
-    w: common_vendor.o(($event) => $data.showThemePicker = false)
+    w: common_vendor.o(($event) => $data.showThemePicker = false, "2d")
   } : {}, {
     x: $data.showLanguagePicker
   }, $data.showLanguagePicker ? {
-    y: common_vendor.o(($event) => $data.showLanguagePicker = false)
+    y: common_vendor.o(($event) => $data.showLanguagePicker = false, "af")
   } : {});
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-c1020a98"]]);

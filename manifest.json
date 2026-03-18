@@ -54,6 +54,7 @@
     "mp-weixin" : {
         "appid" : "wx8e293e6f73b4fe8b",
         "setting" : {
+            /* 开发时关闭便于请求云函数等；正式发布前请在公众平台配置合法域名，并可视情况改为 true 做校验 */
             "urlCheck" : false,
             "minified" : true
         },

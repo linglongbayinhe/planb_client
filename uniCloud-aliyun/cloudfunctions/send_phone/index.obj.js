@@ -1,4 +1,4 @@
-// 云对象：发送页面添加/删除手机号时，同步到云数据库 users 表的 send_phones 字段
+// 云对象：发送页面添加/删除手机号时，同步到云数据库 uni-id-users 表的 send_phones 字段
 'use strict'
 
 const MAX_PHONES = 3
@@ -14,7 +14,7 @@ module.exports = {
 	},
 
 	/**
-	 * 添加或从 users 表移除一个手机号，更新 send_phones 数组
+	 * 添加或从 uni-id-users 表移除一个手机号，更新 send_phones 数组
 	 * @param {string} phone  手机号
 	 * @param {boolean} isNew true=新增（加入列表），false=删除（从列表移除）
 	 * @param {string} [uid]  用户 ID；不传时从 uni-id token 解析
@@ -46,11 +46,11 @@ module.exports = {
 
 		const db = uniCloud.database()
 		try {
-			const docRes = await db.collection('users').doc(uid).get()
-			if (!docRes.data || docRes.data.length === 0) {
+			const docRes = await db.collection('uni-id-users').doc(uid).get()
+			const user = (docRes && docRes.data && docRes.data[0]) || null
+			if (!user) {
 				return { errCode: 'USER_NOT_FOUND', errMsg: '用户不存在' }
 			}
-			const user = docRes.data[0]
 			let list = Array.isArray(user.send_phones) ? user.send_phones.map(x => String(x).trim()) : []
 
 			if (isNew) {
@@ -63,7 +63,7 @@ module.exports = {
 				list = list.filter(x => x !== p)
 			}
 
-			await db.collection('users').doc(uid).update({ send_phones: list })
+			await db.collection('uni-id-users').doc(uid).update({ send_phones: list })
 			return { success: true }
 		} catch (err) {
 			return { errCode: 'DB_ERROR', errMsg: err.message || '更新失败' }

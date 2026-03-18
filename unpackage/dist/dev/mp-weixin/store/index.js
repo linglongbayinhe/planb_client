@@ -9,6 +9,12 @@ const defaultPlan = {
   displayName: "",
   customGuide: ""
 };
+function normalizeTokenExpired(raw) {
+  const n = Number(raw);
+  if (!n || !isFinite(n))
+    return 0;
+  return n < 1e12 ? n * 1e3 : n;
+}
 function loadJSON(key, fallback) {
   try {
     const v = common_vendor.index.getStorageSync(key);
@@ -59,15 +65,66 @@ const mutations = {
     store.sendPlan = Object.assign({}, store.sendPlan, data);
     common_vendor.index.setStorageSync("plan", JSON.stringify(store.sendPlan));
   },
+  setSendPlanFromCloud(payload) {
+    const p = payload || {};
+    const safeInterval = Number(store.sendPlan && store.sendPlan.intervalDays) || defaultPlan.intervalDays;
+    store.sendPlan = Object.assign({}, defaultPlan, {
+      intervalDays: safeInterval,
+      enabled: !!p.enabled,
+      sendDate: p.sendDate || null,
+      emails: Array.isArray(p.emails) ? p.emails : [],
+      phones: Array.isArray(p.phones) ? p.phones : [],
+      displayName: p.displayName || "",
+      customGuide: p.customGuide || ""
+    });
+    common_vendor.index.setStorageSync("plan", JSON.stringify(store.sendPlan));
+  },
+  applyUserBootstrap(payload) {
+    const user = payload && payload.user ? payload.user : null;
+    const plan = payload && payload.plan ? payload.plan : {};
+    this.setUser(user);
+    this.setSendPlanFromCloud(plan);
+  },
   setUser(user) {
     store.currentUser = user;
     common_vendor.index.setStorageSync("user", JSON.stringify(user));
   },
-  logout() {
+  saveAuthToken(newToken) {
+    const token = newToken && newToken.token;
+    const tokenExpired = normalizeTokenExpired(newToken && newToken.tokenExpired);
+    if (!token)
+      return;
+    common_vendor.index.setStorageSync("uni_id_token", token);
+    if (tokenExpired > 0) {
+      common_vendor.index.setStorageSync("uni_id_token_expired", tokenExpired);
+    }
+  },
+  getStoredTokenInfo() {
+    try {
+      const token = common_vendor.index.getStorageSync("uni_id_token") || "";
+      const tokenExpiredRaw = common_vendor.index.getStorageSync("uni_id_token_expired");
+      const tokenExpired = normalizeTokenExpired(tokenExpiredRaw);
+      return { token, tokenExpired };
+    } catch (e) {
+      return { token: "", tokenExpired: 0 };
+    }
+  },
+  hasValidSession() {
+    const tokenInfo = this.getStoredTokenInfo();
+    if (!tokenInfo.token)
+      return false;
+    if (!tokenInfo.tokenExpired)
+      return true;
+    return Date.now() < tokenInfo.tokenExpired;
+  },
+  clearAuthSession() {
     store.currentUser = null;
     common_vendor.index.removeStorageSync("user");
     common_vendor.index.removeStorageSync("uni_id_token");
     common_vendor.index.removeStorageSync("uni_id_token_expired");
+  },
+  logout() {
+    this.clearAuthSession();
     common_vendor.index.removeStorageSync("users");
   },
   setTheme(theme) {

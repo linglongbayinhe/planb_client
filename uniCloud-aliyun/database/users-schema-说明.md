@@ -1,5 +1,7 @@
 # users 表 Schema 更新说明与依赖检查
 
+> **迁移说明**：项目已采用**方案 A 单表合并**，主表为 `uni-id-users`。`users` 表已迁移，本 schema 仅供备份参考；当前业务读写均为 `uni-id-users` 表，详见 `uni-id-users.schema.json`。
+
 ## 一、本次修改摘要
 
 ### 1. 新增业务字段（基于 uni-id-users 模板）

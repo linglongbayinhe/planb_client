@@ -1,4 +1,4 @@
-// 云对象：用户点击「刷新倒计时」时，将新的预计发送时间同步到云数据库 users 表
+// 云对象：用户点击「刷新倒计时」时，将新的预计发送时间同步到云数据库 uni-id-users 表
 'use strict'
 
 module.exports = {
@@ -46,7 +46,11 @@ module.exports = {
 
 		const db = uniCloud.database()
 		try {
-			await db.collection('users').doc(uid).update({
+			const docRes = await db.collection('uni-id-users').doc(uid).get()
+			if (!docRes || !docRes.data || !docRes.data[0]) {
+				return { errCode: 'USER_NOT_FOUND', errMsg: '用户不存在' }
+			}
+			await db.collection('uni-id-users').doc(uid).update({
 				send_time: sendDate
 			})
 			return { success: true }

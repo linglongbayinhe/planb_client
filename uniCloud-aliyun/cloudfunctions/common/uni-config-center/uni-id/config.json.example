@@ -7,12 +7,17 @@
   "passwordInvalidLimit": 6,
   "passwordInvalidTime": 86400,
   "multipleSessions": false,
-  "app": {
-    "weixin": {
-      "appid": "wx8e293e6f73b4fe8b",
-      "appsecret": "b3846247b9984887f9955d0fdfc70e63"
+  "mp-weixin": {
+    "oauth": {
+      "weixin": {
+        "appid": "",
+        "appsecret": ""
+      }
     }
   },
-  "SMTP_USER": "linglongbayinhe@163.com",
-  "SMTP_PASS": "Mm123456"
+  "SMTP_USER": "",
+  "SMTP_PASS": "",
+  "SMTP_HOST": "",
+  "SMTP_PORT": 465,
+  "SMTP_FROM": ""
 }

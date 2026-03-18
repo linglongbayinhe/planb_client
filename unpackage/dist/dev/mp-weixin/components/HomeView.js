@@ -114,7 +114,7 @@ const _sfc_main = {
       if (!uid)
         return;
       try {
-        const obj = common_vendor.tr.importObject("send_time");
+        const obj = common_vendor._r.importObject("send_time");
         const res = await obj.updateSendTime(newSendDateMs, uid);
         if (res && res.errCode) {
           common_vendor.index.showToast({
@@ -152,9 +152,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     g: common_vendor.t($options.timeStr.ss),
     h: common_vendor.t($options.formattedSendDate),
     i: !$options.planEnabled ? 1 : "",
-    j: common_vendor.o((...args) => $options.handleRefresh && $options.handleRefresh(...args)),
-    k: common_vendor.o((...args) => $options.goToClues && $options.goToClues(...args)),
-    l: common_vendor.o((...args) => $options.goToSend && $options.goToSend(...args))
+    j: common_vendor.o((...args) => $options.handleRefresh && $options.handleRefresh(...args), "b5"),
+    k: common_vendor.o((...args) => $options.goToClues && $options.goToClues(...args), "ff"),
+    l: common_vendor.o((...args) => $options.goToSend && $options.goToSend(...args), "c1")
   };
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-f29a63c4"]]);

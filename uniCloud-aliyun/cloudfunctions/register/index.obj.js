@@ -1,11 +1,44 @@
-// 云对象：邮箱+密码注册，写入云数据库 users 表
+// 云对象：邮箱+密码注册，写入云数据库 uni-id-users 表
 // 依赖：uni-id-common（用于注册成功后生成 token）
 'use strict'
 
 const crypto = require('crypto')
+const uniConfigCenter = require('uni-config-center')
 
-// 密码加密（与登录校验一致）。生产环境请在云空间「云函数/云对象」→ 配置 → 环境变量中设置 UNI_ID_PASSWORD_SECRET
-const PASSWORD_SECRET = process.env.UNI_ID_PASSWORD_SECRET || 'planb-register-secret-change-in-production'
+function getUniIdConfig() {
+	try {
+		return uniConfigCenter({ pluginId: 'uni-id' }).config() || {}
+	} catch (e) {
+		return {}
+	}
+}
+
+function getOauthConfig(provider) {
+	const cfg = getUniIdConfig()
+	if (provider === 'weixin') {
+		const standard = (((cfg['mp-weixin'] || {}).oauth || {}).weixin) || {}
+		const legacy = ((cfg.app || {}).weixin) || {}
+		return {
+			appid: standard.appid || legacy.appid || '',
+			appsecret: standard.appsecret || legacy.appsecret || ''
+		}
+	}
+	if (provider === 'qq') {
+		const mpQQ = (((cfg['mp-qq'] || {}).oauth || {}).qq) || {}
+		const appQQ = (((cfg.app || {}).oauth || {}).qq) || {}
+		return {
+			appid: mpQQ.appid || appQQ.appid || '',
+			appsecret: mpQQ.appsecret || appQQ.appsecret || ''
+		}
+	}
+	return { appid: '', appsecret: '' }
+}
+
+// 密码加密（与登录校验一致）。优先读环境变量 UNI_ID_PASSWORD_SECRET，其次 config.passwordSecret
+function getPasswordSecret() {
+	return process.env.UNI_ID_PASSWORD_SECRET || getUniIdConfig().passwordSecret || 'planb-register-secret-change-in-production'
+}
+const PASSWORD_SECRET = getPasswordSecret()
 
 function hashPassword(password) {
 	return crypto.pbkdf2Sync(password, PASSWORD_SECRET, 10000, 64, 'sha512').toString('hex')
@@ -26,7 +59,7 @@ module.exports = {
 	},
 
 	/**
-	 * 邮箱+密码注册，写入 users 表
+	 * 邮箱+密码注册，写入 uni-id-users 表
 	 * @param {string} email 邮箱
 	 * @param {string} password 密码（明文，云端加密存储）
 	 * @param {string} [nickname] 昵称
@@ -48,13 +81,13 @@ module.exports = {
 
 		const db = uniCloud.database()
 
-		// 1. 邮箱唯一性：只查 users 表
-		const existRes = await db.collection('users').where({ email: e }).limit(1).count()
+		// 1. 邮箱唯一性：只查 uni-id-users 表
+		const existRes = await db.collection('uni-id-users').where({ email: e }).limit(1).count()
 		if (existRes.total > 0) {
 			return { errCode: 'EMAIL_EXISTS', errMsg: '该邮箱已注册' }
 		}
 
-		// 2. 写入 users 表（与 uni-id-users 结构兼容）
+		// 2. 写入 uni-id-users 表
 		const now = Date.now()
 		const userDoc = {
 			email: e,
@@ -70,11 +103,11 @@ module.exports = {
 
 		let uid
 		try {
-			const addRes = await db.collection('users').add(userDoc)
+			const addRes = await db.collection('uni-id-users').add(userDoc)
 			uid = addRes.id
 		} catch (err) {
 			// 并发下可能唯一索引冲突，再判断一次
-			const again = await db.collection('users').where({ email: e }).limit(1).count()
+			const again = await db.collection('uni-id-users').where({ email: e }).limit(1).count()
 			if (again.total > 0) {
 				return { errCode: 'EMAIL_EXISTS', errMsg: '该邮箱已注册' }
 			}
@@ -115,7 +148,7 @@ module.exports = {
 		}
 
 		const db = uniCloud.database()
-		const res = await db.collection('users').where({ email: e }).limit(1).get()
+		const res = await db.collection('uni-id-users').where({ email: e }).limit(1).get()
 
 		if (!res.data || res.data.length === 0) {
 			return { errCode: 'USER_NOT_FOUND', errMsg: '该邮箱尚未注册' }
@@ -168,10 +201,11 @@ module.exports = {
 		let nickname = ''
 
 		if (p === 'weixin') {
-			const appId = process.env.WECHAT_MINI_APPID || ''
-			const secret = process.env.WECHAT_MINI_SECRET || ''
+			const wxCfg = getOauthConfig('weixin')
+			const appId = wxCfg.appid || ''
+			const secret = wxCfg.appsecret || ''
 			if (!appId || !secret) {
-				return { errCode: 'CONFIG_MISSING', errMsg: '请配置微信小程序 AppID 与 AppSecret 环境变量' }
+				return { errCode: 'CONFIG_MISSING', errMsg: '请配置微信小程序 AppID 与 AppSecret（uni-id 配置）' }
 			}
 			const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${encodeURIComponent(appId)}&secret=${encodeURIComponent(secret)}&js_code=${encodeURIComponent(c)}&grant_type=authorization_code`
 			try {
@@ -186,10 +220,11 @@ module.exports = {
 			}
 		} else {
 			// QQ 小程序：需在 QQ 互联配置并设置 QQ_MINI_APPID、QQ_MINI_SECRET，调用 QQ 的 code2session 接口
-			const appId = process.env.QQ_MINI_APPID || ''
-			const secret = process.env.QQ_MINI_SECRET || ''
+			const qqCfg = getOauthConfig('qq')
+			const appId = qqCfg.appid || ''
+			const secret = qqCfg.appsecret || ''
 			if (!appId || !secret) {
-				return { errCode: 'CONFIG_MISSING', errMsg: '请配置 QQ 小程序 AppID 与 AppSecret 环境变量' }
+				return { errCode: 'CONFIG_MISSING', errMsg: '请配置 QQ 小程序 AppID 与 AppSecret（uni-id 配置）' }
 			}
 			const url = `https://api.q.qq.com/sns/jscode2session?appid=${encodeURIComponent(appId)}&secret=${encodeURIComponent(secret)}&js_code=${encodeURIComponent(c)}&grant_type=authorization_code`
 			try {
@@ -209,7 +244,7 @@ module.exports = {
 		}
 
 		let user = null
-		const queryRes = await db.collection('users').where(p === 'weixin' ? { 'wx_openid.mp': openid } : { qq_openid: openid }).limit(1).get()
+		const queryRes = await db.collection('uni-id-users').where(p === 'weixin' ? { 'wx_openid.mp': openid } : { qq_openid: openid }).limit(1).get()
 		if (queryRes.data && queryRes.data.length > 0) {
 			user = queryRes.data[0]
 		}
@@ -226,7 +261,7 @@ module.exports = {
 			const userDoc = p === 'weixin'
 				? { wx_openid: { mp: openid }, nickname: '', status: 0, created_time: now, enable_sending: false }
 				: { qq_openid: openid, nickname: '', status: 0, created_time: now, enable_sending: false }
-			const addRes = await db.collection('users').add(userDoc)
+			const addRes = await db.collection('uni-id-users').add(userDoc)
 			uid = addRes.id
 		}
 

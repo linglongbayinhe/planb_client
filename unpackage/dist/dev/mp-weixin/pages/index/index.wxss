@@ -43,3 +43,58 @@
 .tab-label-active {
 		color: #007AFF;
 }
+.startup-mask {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 2000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(0, 0, 0, 0.38);
+}
+.startup-card {
+		width: 76%;
+		background: #FFFFFF;
+		border-radius: 14px;
+		padding: 20px 16px 16px;
+}
+.startup-title {
+		font-size: 20px;
+		font-weight: 700;
+		color: #1C1C1E;
+		text-align: center;
+}
+.startup-desc {
+		margin-top: 10px;
+		font-size: 14px;
+		color: #6C6C70;
+		text-align: center;
+		line-height: 1.5;
+}
+.gate-btn {
+		height: 48px;
+		border-radius: 12px;
+		margin-top: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+}
+.gate-btn-auth {
+		background-color: #07C160;
+}
+.gate-btn-cancel {
+		background-color: #E5E5EA;
+}
+.gate-btn-text {
+		font-size: 16px;
+		font-weight: 600;
+		color: #FFFFFF;
+}
+.gate-btn-cancel-text {
+		font-size: 16px;
+		font-weight: 500;
+		color: #3C3C43;
+}

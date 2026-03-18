@@ -195,6 +195,10 @@
 				})
 			},
 			confirmReset() {
+				if (!this.currentUser) {
+					uni.showToast({ title: '请先登录', icon: 'none' })
+					return
+				}
 				uni.showModal({
 					title: '重置并删除本地数据',
 					content: '此操作将清除所有线索和发送计划，不可恢复。确定继续？',

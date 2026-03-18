@@ -195,7 +195,7 @@
 				this.startSyncedCountdown()
 				uni.vibrateShort && uni.vibrateShort({ type: 'light' })
 
-				// 2. 已登录时，同步到云数据库 users 表的 send_time 字段
+				// 2. 已登录时，同步到云数据库 uni-id-users 表的 send_time 字段
 				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
 				if (!uid) return  // 未登录则只保存到本地，不上报云端
 

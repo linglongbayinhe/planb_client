@@ -92,7 +92,7 @@
 
 		<!-- 展示姓名 + 通知正文（合并卡片） -->
 		<view class="content-card card">
-			<view class="info-row">
+			<view class="info-row" @click="onContentRequireLogin">
 				<text class="info-icon">🔗</text>
 				<text class="info-label">展示姓名</text>
 				<input
@@ -100,6 +100,7 @@
 					v-model="displayNameLocal"
 					placeholder="未设置"
 					placeholder-class="input-placeholder"
+					:disabled="!currentUid"
 				/>
 			</view>
 			<view class="divider"></view>
@@ -127,6 +128,8 @@
 						placeholder="填写查找线索的起始指引..."
 						placeholder-class="input-placeholder"
 						:auto-height="true"
+						:disabled="!currentUid"
+						@focus="onContentRequireLogin"
 					/>
 					<text class="notify-line">开始查找。</text>
 					<text class="notify-line">谢谢你的帮助。</text>
@@ -196,7 +199,7 @@
 		<!-- 临时：30 秒后触发（测试用） -->
 		<view class="plan-btn-wrap">
 			<view class="plan-btn plan-btn-test" @click="trigger30Sec">
-				<text class="plan-btn-text">30 秒后触发</text>
+				<text class="plan-btn-text">预计日期设为 30 秒后</text>
 			</view>
 		</view>
 
@@ -258,6 +261,17 @@
 				const month = d.getMonth() + 1
 				const day = d.getDate()
 				return `${year}年${month}月${day}日`
+			},
+			sendPlanRef() {
+				return store.sendPlan
+			}
+		},
+		watch: {
+			sendPlanRef: {
+				handler() {
+					this.syncContentFromStore()
+				},
+				deep: true
 			}
 		},
 		mounted() {
@@ -360,6 +374,11 @@
 					uni.showToast({ title: (e && e.message) || '云端同步失败', icon: 'none', duration: 2000 })
 				}
 			},
+			onContentRequireLogin() {
+				if (!this.currentUid) {
+					uni.showToast({ title: '请先登录', icon: 'none' })
+				}
+			},
 			syncContentFromStore() {
 				const d = store.sendPlan.displayName || ''
 				const c = store.sendPlan.customGuide || ''
@@ -369,6 +388,10 @@
 				this.appliedCustomGuide = c
 			},
 			async applyContent() {
+				if (!this.currentUid) {
+					uni.showToast({ title: '请先登录', icon: 'none' })
+					return
+				}
 				mutations.updateSendPlan({
 					displayName: this.displayNameLocal,
 					customGuide: this.customGuideLocal
@@ -443,7 +466,7 @@
 						uni.showToast({ title: res.errMsg || '设置失败', icon: 'none' })
 						return
 					}
-					uni.showToast({ title: '已设置 30 秒后触发', icon: 'success' })
+					uni.showToast({ title: '已更新预期日期为 30 秒后', icon: 'success' })
 				} catch (e) {
 					uni.showToast({ title: (e && e.message) || '设置失败', icon: 'none' })
 				}

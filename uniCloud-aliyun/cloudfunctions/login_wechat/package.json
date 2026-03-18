@@ -1,9 +1,0 @@
-{
-  "name": "login_wechat",
-  "dependencies": {
-    "uni-config-center": "file:../../../uni_modules/uni-config-center/uniCloud/cloudfunctions/common/uni-config-center"
-  },
-  "extensions": {
-    "uni-cloud-jql": {}
-  }
-}

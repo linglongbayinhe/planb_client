@@ -1,4 +1,4 @@
-// 云对象：同步用户「是否开启发送计划」到云数据库 users 表
+// 云对象：同步用户「是否开启发送计划」到云数据库 uni-id-users 表
 // 调用时传入 enable_sending，uid 可选（不传时尝试从 uni-id token 解析）
 'use strict'
 
@@ -13,9 +13,9 @@ module.exports = {
 	},
 
 	/**
-	 * 设置用户的 enable_sending 并写入云数据库 users 表
+	 * 设置用户的 enable_sending 并写入云数据库 uni-id-users 表
 	 * @param {boolean} enable_sending 是否开启发送计划
-	 * @param {string} [uid] 用户 ID（对应 users 表 _id），不传则从 uni-id token 解析
+	 * @param {string} [uid] 用户 ID（对应 uni-id-users 表 _id），不传则从 uni-id token 解析
 	 * @returns {object} { errCode, errMsg } 或 { success: true }
 	 */
 	async setEnableSending(enable_sending, uid) {
@@ -47,7 +47,11 @@ module.exports = {
 
 		const db = uniCloud.database()
 		try {
-			await db.collection('users').doc(uid).update({
+			const docRes = await db.collection('uni-id-users').doc(uid).get()
+			if (!docRes || !docRes.data || !docRes.data[0]) {
+				return { errCode: 'USER_NOT_FOUND', errMsg: '用户不存在' }
+			}
+			await db.collection('uni-id-users').doc(uid).update({
 				enable_sending
 			})
 			return { success: true }

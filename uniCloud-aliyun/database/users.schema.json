@@ -188,6 +188,26 @@
 				}
 			}
 		},
+		"tt_openid": {
+			"bsonType": "object",
+			"description": "抖音各个平台openid",
+			"properties": {
+				"mp": {
+					"bsonType": "string",
+					"description": "抖音小程序平台openid"
+				}
+			}
+		},
+		"xhs_openid": {
+			"bsonType": "object",
+			"description": "小红书各个平台openid",
+			"properties": {
+				"mp": {
+					"bsonType": "string",
+					"description": "小红书小程序平台openid"
+				}
+			}
+		},
 		"ali_openid": {
 			"bsonType": "string",
 			"description": "支付宝平台openid"

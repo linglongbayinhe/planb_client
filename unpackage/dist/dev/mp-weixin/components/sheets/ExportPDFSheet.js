@@ -56,9 +56,9 @@ const _sfc_main = {
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o((...args) => $options.onClose && $options.onClose(...args)),
+    a: common_vendor.o((...args) => $options.onClose && $options.onClose(...args), "7f"),
     b: $data.fileName,
-    c: common_vendor.o(($event) => $data.fileName = $event.detail.value),
+    c: common_vendor.o(($event) => $data.fileName = $event.detail.value, "7d"),
     d: common_vendor.t($data.fileName || "线索手册"),
     e: common_vendor.t($options.totalClues),
     f: common_vendor.f($options.typeStats, (count, type, i0) => {
@@ -73,21 +73,21 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       });
     }),
     g: $data.usePassword,
-    h: common_vendor.o(($event) => $data.usePassword = $event.detail.value),
+    h: common_vendor.o(($event) => $data.usePassword = $event.detail.value, "0b"),
     i: $data.usePassword
   }, $data.usePassword ? {
     j: $data.password,
-    k: common_vendor.o(($event) => $data.password = $event.detail.value),
+    k: common_vendor.o(($event) => $data.password = $event.detail.value, "cc"),
     l: $data.confirmPassword,
-    m: common_vendor.o(($event) => $data.confirmPassword = $event.detail.value),
+    m: common_vendor.o(($event) => $data.confirmPassword = $event.detail.value, "2e"),
     n: $data.passwordHint,
-    o: common_vendor.o(($event) => $data.passwordHint = $event.detail.value)
+    o: common_vendor.o(($event) => $data.passwordHint = $event.detail.value, "91")
   } : {}, {
     p: !$options.canExport ? 1 : "",
-    q: common_vendor.o((...args) => $options.doExport && $options.doExport(...args)),
+    q: common_vendor.o((...args) => $options.doExport && $options.doExport(...args), "58"),
     r: common_vendor.o(() => {
-    }),
-    s: common_vendor.o((...args) => $options.onClose && $options.onClose(...args))
+    }, "b2"),
+    s: common_vendor.o((...args) => $options.onClose && $options.onClose(...args), "45")
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-25171861"]]);
