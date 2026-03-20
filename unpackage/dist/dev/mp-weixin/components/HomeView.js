@@ -102,6 +102,8 @@ const _sfc_main = {
         common_vendor.index.showToast({ title: "请先开启发送计划", icon: "none" });
         return;
       }
+      if (!store_index.mutations.ensureAuthForWriteAction())
+        return;
       const intervalDays = store_index.store.sendPlan.intervalDays || 7;
       const newSendDate = /* @__PURE__ */ new Date();
       newSendDate.setDate(newSendDate.getDate() + intervalDays);
@@ -111,8 +113,6 @@ const _sfc_main = {
       this.startSyncedCountdown();
       common_vendor.index.vibrateShort && common_vendor.index.vibrateShort({ type: "light" });
       const uid = store_index.store.currentUser && (store_index.store.currentUser._id || store_index.store.currentUser.uid);
-      if (!uid)
-        return;
       try {
         const obj = common_vendor._r.importObject("send_time");
         const res = await obj.updateSendTime(newSendDateMs, uid);

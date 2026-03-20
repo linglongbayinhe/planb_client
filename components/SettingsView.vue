@@ -175,11 +175,22 @@
 			} catch (e) {
 				this.statusBarHeight = 44
 			}
+			if (typeof uni !== 'undefined' && typeof uni.$on === 'function') {
+				uni.$on('open-login-sheet', this.openLoginSheet)
+			}
+		},
+		beforeDestroy() {
+			if (typeof uni !== 'undefined' && typeof uni.$off === 'function') {
+				uni.$off('open-login-sheet', this.openLoginSheet)
+			}
 		},
 		methods: {
+			openLoginSheet() {
+				this.showLoginSheet = true
+			},
 			onAccountTap() {
 				if (!this.currentUser) {
-					this.showLoginSheet = true
+					this.openLoginSheet()
 				}
 			},
 			confirmLogout() {
@@ -196,7 +207,7 @@
 			},
 			confirmReset() {
 				if (!this.currentUser) {
-					uni.showToast({ title: '请先登录', icon: 'none' })
+					this.openLoginSheet()
 					return
 				}
 				uni.showModal({

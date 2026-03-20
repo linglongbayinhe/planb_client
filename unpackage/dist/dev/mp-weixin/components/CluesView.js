@@ -183,6 +183,11 @@ const _sfc_main = {
       this.dragOffsetPx = 0;
       const self = this;
       setTimeout(function() {
+        if (!store_index.mutations.ensureAuthForWriteAction()) {
+          self.dragState = { active: false, movableIndex: -1, dropIndex: -1 };
+          self.dragReleasePhase = false;
+          return;
+        }
         store_index.mutations.setCategoryOrder(order);
         self.dragState = { active: false, movableIndex: -1, dropIndex: -1 };
         self.dragReleasePhase = false;
@@ -194,12 +199,18 @@ const _sfc_main = {
       this.searchText = "";
     },
     openAddSheet() {
+      if (!store_index.mutations.ensureAuthForWriteAction())
+        return;
       this.showAddSheet = true;
     },
     openExportSheet() {
+      if (!store_index.mutations.ensureAuthForWriteAction())
+        return;
       this.showExportSheet = true;
     },
     openDetailSheet(clue) {
+      if (!store_index.mutations.ensureAuthForWriteAction())
+        return;
       this.selectedClue = clue;
       this.showDetailSheet = true;
     },

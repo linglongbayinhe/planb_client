@@ -52,7 +52,9 @@ const _sfc_main = {
       if (!this.canSave)
         return;
       const updates = { ...this.form };
-      store_index.mutations.updateClue(this.clue.id, updates);
+      const saved = store_index.mutations.updateClue(this.clue.id, updates);
+      if (!saved)
+        return;
       const updated = { ...this.clue, ...updates, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
       this.$emit("saved", updated);
     }

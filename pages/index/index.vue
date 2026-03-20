@@ -87,6 +87,14 @@
 				this.safeAreaBottom = 0
 			}
 			this.bootstrapLogin()
+			if (typeof uni !== 'undefined' && typeof uni.$on === 'function') {
+				uni.$on('require-login', this.requireLoginThenOpenSettings)
+			}
+		},
+		onUnload() {
+			if (typeof uni !== 'undefined' && typeof uni.$off === 'function') {
+				uni.$off('require-login', this.requireLoginThenOpenSettings)
+			}
 		},
 		onShow() {
 			if (!store.currentUser && !this.booting && !mutations.hasValidSession()) {
@@ -184,6 +192,13 @@
 					})
 				} else {
 					uni.showToast({ title: '已取消登录', icon: 'none' })
+				}
+			},
+			requireLoginThenOpenSettings() {
+				if (this.booting) return
+				this.currentTab = 3
+				if (typeof uni !== 'undefined' && typeof uni.$emit === 'function') {
+					uni.$emit('open-login-sheet')
 				}
 			},
 			switchTab(index) {

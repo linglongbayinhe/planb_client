@@ -144,7 +144,8 @@
 			onSave() {
 				if (!this.canSave) return
 				const updates = { ...this.form }
-				mutations.updateClue(this.clue.id, updates)
+				const saved = mutations.updateClue(this.clue.id, updates)
+				if (!saved) return
 				const updated = { ...this.clue, ...updates, updatedAt: new Date().toISOString() }
 				this.$emit('saved', updated)
 			}

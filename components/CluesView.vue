@@ -312,6 +312,11 @@
 				this.dragOffsetPx = 0
 				const self = this
 				setTimeout(function () {
+					if (!mutations.ensureAuthForWriteAction()) {
+						self.dragState = { active: false, movableIndex: -1, dropIndex: -1 }
+						self.dragReleasePhase = false
+						return
+					}
 					mutations.setCategoryOrder(order)
 					self.dragState = { active: false, movableIndex: -1, dropIndex: -1 }
 					self.dragReleasePhase = false
@@ -322,12 +327,15 @@
 				this.searchText = ''
 			},
 			openAddSheet() {
+				if (!mutations.ensureAuthForWriteAction()) return
 				this.showAddSheet = true
 			},
 			openExportSheet() {
+				if (!mutations.ensureAuthForWriteAction()) return
 				this.showExportSheet = true
 			},
 			openDetailSheet(clue) {
+				if (!mutations.ensureAuthForWriteAction()) return
 				this.selectedClue = clue
 				this.showDetailSheet = true
 			},

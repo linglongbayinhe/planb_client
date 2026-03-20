@@ -59,6 +59,8 @@ const _sfc_main = {
       this.$emit("close");
     },
     openEditSheet() {
+      if (!store_index.mutations.ensureAuthForWriteAction())
+        return;
       this.showEditSheet = true;
     },
     onEditSaved(updated) {
@@ -67,6 +69,8 @@ const _sfc_main = {
       this.$emit("updated", this.currentClue);
     },
     confirmDelete() {
+      if (!store_index.mutations.ensureAuthForWriteAction())
+        return;
       common_vendor.index.showModal({
         title: "删除这条线索？",
         content: "此操作不可撤销",
@@ -74,7 +78,9 @@ const _sfc_main = {
         confirmText: "删除",
         success: (res) => {
           if (res.confirm) {
-            store_index.mutations.deleteClue(this.currentClue.id);
+            const deleted = store_index.mutations.deleteClue(this.currentClue.id);
+            if (!deleted)
+              return;
             this.$emit("deleted");
           }
         }

@@ -79,10 +79,8 @@ const _sfc_main = {
   },
   methods: {
     addEmail() {
-      if (!this.currentUid) {
-        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+      if (!store_index.mutations.ensureAuthForWriteAction())
         return;
-      }
       const email = this.emailInput.trim().toLowerCase();
       if (!email)
         return;
@@ -102,10 +100,8 @@ const _sfc_main = {
       this.syncSendEmailToCloud(email, true);
     },
     addPhone() {
-      if (!this.currentUid) {
-        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+      if (!store_index.mutations.ensureAuthForWriteAction())
         return;
-      }
       const phone = this.phoneInput.trim();
       if (!phone)
         return;
@@ -125,10 +121,8 @@ const _sfc_main = {
       this.syncSendPhoneToCloud(phone, true);
     },
     removeEmail(i) {
-      if (!this.currentUid) {
-        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+      if (!store_index.mutations.ensureAuthForWriteAction())
         return;
-      }
       const removedEmail = this.emails[i];
       const list = [...this.emails];
       list.splice(i, 1);
@@ -137,10 +131,8 @@ const _sfc_main = {
         this.syncSendEmailToCloud(removedEmail, false);
     },
     removePhone(i) {
-      if (!this.currentUid) {
-        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+      if (!store_index.mutations.ensureAuthForWriteAction())
         return;
-      }
       const removedPhone = this.phones[i];
       const list = [...this.phones];
       list.splice(i, 1);
@@ -177,9 +169,8 @@ const _sfc_main = {
       }
     },
     onContentRequireLogin() {
-      if (!this.currentUid) {
-        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
-      }
+      if (!this.currentUid)
+        store_index.mutations.ensureAuthForWriteAction();
     },
     syncContentFromStore() {
       const d = store_index.store.sendPlan.displayName || "";
@@ -190,10 +181,8 @@ const _sfc_main = {
       this.appliedCustomGuide = c;
     },
     async applyContent() {
-      if (!this.currentUid) {
-        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+      if (!store_index.mutations.ensureAuthForWriteAction())
         return;
-      }
       store_index.mutations.updateSendPlan({
         displayName: this.displayNameLocal,
         customGuide: this.customGuideLocal
@@ -231,6 +220,8 @@ const _sfc_main = {
       store_index.mutations.updateSendPlan({ intervalDays: e.detail.value });
     },
     async togglePlan() {
+      if (!store_index.mutations.ensureAuthForWriteAction())
+        return;
       const newEnabled = !this.planEnabled;
       if (this.planEnabled) {
         store_index.mutations.updateSendPlan({ enabled: false });
@@ -257,10 +248,8 @@ const _sfc_main = {
       }
     },
     async trigger30Sec() {
-      if (!this.currentUid) {
-        common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+      if (!store_index.mutations.ensureAuthForWriteAction())
         return;
-      }
       try {
         const obj = common_vendor._r.importObject("send_time");
         const res = await obj.updateSendTime(Date.now() + 3e4, this.currentUid);

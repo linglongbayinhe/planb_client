@@ -111,7 +111,9 @@ const _sfc_main = {
           note: this.form.note
         });
       }
-      store_index.mutations.addClue(clue);
+      const saved = store_index.mutations.addClue(clue);
+      if (!saved)
+        return;
       this.$emit("saved");
     }
   }

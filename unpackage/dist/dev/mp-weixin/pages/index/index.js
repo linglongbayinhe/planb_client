@@ -37,6 +37,14 @@ const _sfc_main = {
       this.safeAreaBottom = 0;
     }
     this.bootstrapLogin();
+    if (typeof common_vendor.index !== "undefined" && typeof common_vendor.index.$on === "function") {
+      common_vendor.index.$on("require-login", this.requireLoginThenOpenSettings);
+    }
+  },
+  onUnload() {
+    if (typeof common_vendor.index !== "undefined" && typeof common_vendor.index.$off === "function") {
+      common_vendor.index.$off("require-login", this.requireLoginThenOpenSettings);
+    }
   },
   onShow() {
     if (!store_index.store.currentUser && !this.booting && !store_index.mutations.hasValidSession()) {
@@ -102,7 +110,7 @@ const _sfc_main = {
         const obj = common_vendor._r.importObject("auth_provider", { customUI: true });
         const result = await obj.loginByProvider(provider, code, {});
         if (!result || result.code !== 0 || !result.token) {
-          common_vendor.index.__f__("error", "at pages/index/index.vue:160", "[auth_provider/loginByProvider] fail result:", result);
+          common_vendor.index.__f__("error", "at pages/index/index.vue:168", "[auth_provider/loginByProvider] fail result:", result);
           throw new Error(result && result.message || "授权登录失败");
         }
         store_index.mutations.saveAuthToken({
@@ -130,6 +138,14 @@ const _sfc_main = {
         });
       } else {
         common_vendor.index.showToast({ title: "已取消登录", icon: "none" });
+      }
+    },
+    requireLoginThenOpenSettings() {
+      if (this.booting)
+        return;
+      this.currentTab = 3;
+      if (typeof common_vendor.index !== "undefined" && typeof common_vendor.index.$emit === "function") {
+        common_vendor.index.$emit("open-login-sheet");
       }
     },
     switchTab(index) {

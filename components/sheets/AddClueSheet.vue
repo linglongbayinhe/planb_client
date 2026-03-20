@@ -257,7 +257,8 @@
 						note: this.form.note
 					})
 				}
-				mutations.addClue(clue)
+				const saved = mutations.addClue(clue)
+				if (!saved) return
 				this.$emit('saved')
 			}
 		}

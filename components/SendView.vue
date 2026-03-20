@@ -285,10 +285,7 @@
 		},
 		methods: {
 			addEmail() {
-				if (!this.currentUid) {
-					uni.showToast({ title: '请先登录', icon: 'none' })
-					return
-				}
+				if (!mutations.ensureAuthForWriteAction()) return
 				const email = this.emailInput.trim().toLowerCase()
 				if (!email) return
 				const emailReg = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
@@ -306,10 +303,7 @@
 				this.syncSendEmailToCloud(email, true)
 			},
 			addPhone() {
-				if (!this.currentUid) {
-					uni.showToast({ title: '请先登录', icon: 'none' })
-					return
-				}
+				if (!mutations.ensureAuthForWriteAction()) return
 				const phone = this.phoneInput.trim()
 				if (!phone) return
 				const phoneReg = /^1[3-9]\d{9}$/
@@ -327,10 +321,7 @@
 				this.syncSendPhoneToCloud(phone, true)
 			},
 			removeEmail(i) {
-				if (!this.currentUid) {
-					uni.showToast({ title: '请先登录', icon: 'none' })
-					return
-				}
+				if (!mutations.ensureAuthForWriteAction()) return
 				const removedEmail = this.emails[i]
 				const list = [...this.emails]
 				list.splice(i, 1)
@@ -338,10 +329,7 @@
 				if (removedEmail) this.syncSendEmailToCloud(removedEmail, false)
 			},
 			removePhone(i) {
-				if (!this.currentUid) {
-					uni.showToast({ title: '请先登录', icon: 'none' })
-					return
-				}
+				if (!mutations.ensureAuthForWriteAction()) return
 				const removedPhone = this.phones[i]
 				const list = [...this.phones]
 				list.splice(i, 1)
@@ -375,9 +363,7 @@
 				}
 			},
 			onContentRequireLogin() {
-				if (!this.currentUid) {
-					uni.showToast({ title: '请先登录', icon: 'none' })
-				}
+				if (!this.currentUid) mutations.ensureAuthForWriteAction()
 			},
 			syncContentFromStore() {
 				const d = store.sendPlan.displayName || ''
@@ -388,10 +374,7 @@
 				this.appliedCustomGuide = c
 			},
 			async applyContent() {
-				if (!this.currentUid) {
-					uni.showToast({ title: '请先登录', icon: 'none' })
-					return
-				}
+				if (!mutations.ensureAuthForWriteAction()) return
 				mutations.updateSendPlan({
 					displayName: this.displayNameLocal,
 					customGuide: this.customGuideLocal
@@ -428,6 +411,7 @@
 				mutations.updateSendPlan({ intervalDays: e.detail.value })
 			},
 			async togglePlan() {
+				if (!mutations.ensureAuthForWriteAction()) return
 				const newEnabled = !this.planEnabled
 				if (this.planEnabled) {
 					mutations.updateSendPlan({ enabled: false })
@@ -455,10 +439,7 @@
 				}
 			},
 			async trigger30Sec() {
-				if (!this.currentUid) {
-					uni.showToast({ title: '请先登录', icon: 'none' })
-					return
-				}
+				if (!mutations.ensureAuthForWriteAction()) return
 				try {
 					const obj = uniCloud.importObject('send_time')
 					const res = await obj.updateSendTime(Date.now() + 30000, this.currentUid)

@@ -162,6 +162,7 @@
 				this.$emit('close')
 			},
 			openEditSheet() {
+				if (!mutations.ensureAuthForWriteAction()) return
 				this.showEditSheet = true
 			},
 			onEditSaved(updated) {
@@ -170,6 +171,7 @@
 				this.$emit('updated', this.currentClue)
 			},
 			confirmDelete() {
+				if (!mutations.ensureAuthForWriteAction()) return
 				uni.showModal({
 					title: '删除这条线索？',
 					content: '此操作不可撤销',
@@ -177,7 +179,8 @@
 					confirmText: '删除',
 					success: (res) => {
 						if (res.confirm) {
-							mutations.deleteClue(this.currentClue.id)
+							const deleted = mutations.deleteClue(this.currentClue.id)
+							if (!deleted) return
 							this.$emit('deleted')
 						}
 					}

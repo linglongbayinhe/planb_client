@@ -47,32 +47,53 @@ export const store = reactive({
 })
 
 export const mutations = {
+	getCurrentUid() {
+		const u = store.currentUser
+		return (u && (u._id || u.uid)) || ''
+	},
+
+	ensureAuthForWriteAction() {
+		if (this.getCurrentUid()) return true
+		if (typeof uni !== 'undefined' && typeof uni.$emit === 'function') {
+			uni.$emit('require-login')
+		}
+		return false
+	},
+
 	addClue(clue) {
+		if (!this.ensureAuthForWriteAction()) return false
 		const newClue = Object.assign({}, clue, {
 			id: Date.now().toString(),
 			updatedAt: new Date().toISOString()
 		})
 		store.clues = [newClue, ...store.clues]
 		uni.setStorageSync('clues', JSON.stringify(store.clues))
+		return true
 	},
 
 	updateClue(id, data) {
+		if (!this.ensureAuthForWriteAction()) return false
 		store.clues = store.clues.map(c =>
 			c.id === id ? Object.assign({}, c, data, {
 				updatedAt: new Date().toISOString()
 			}) : c
 		)
 		uni.setStorageSync('clues', JSON.stringify(store.clues))
+		return true
 	},
 
 	deleteClue(id) {
+		if (!this.ensureAuthForWriteAction()) return false
 		store.clues = store.clues.filter(c => c.id !== id)
 		uni.setStorageSync('clues', JSON.stringify(store.clues))
+		return true
 	},
 
 	updateSendPlan(data) {
+		if (!this.ensureAuthForWriteAction()) return false
 		store.sendPlan = Object.assign({}, store.sendPlan, data)
 		uni.setStorageSync('plan', JSON.stringify(store.sendPlan))
+		return true
 	},
 
 	setSendPlanFromCloud(payload) {
@@ -153,8 +174,10 @@ export const mutations = {
 	},
 
 	setCategoryOrder(order) {
+		if (!this.ensureAuthForWriteAction()) return false
 		store.categoryOrder = order
 		uni.setStorageSync('clueCategoryOrder', JSON.stringify(order))
+		return true
 	},
 
 	resetAll() {

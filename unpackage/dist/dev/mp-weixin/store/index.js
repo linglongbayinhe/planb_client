@@ -41,29 +41,53 @@ const store = common_vendor.reactive({
   categoryOrder: loadJSON("clueCategoryOrder", defaultCategoryOrder)
 });
 const mutations = {
+  getCurrentUid() {
+    const u = store.currentUser;
+    return u && (u._id || u.uid) || "";
+  },
+  ensureAuthForWriteAction() {
+    if (this.getCurrentUid())
+      return true;
+    if (typeof common_vendor.index !== "undefined" && typeof common_vendor.index.$emit === "function") {
+      common_vendor.index.$emit("require-login");
+    }
+    return false;
+  },
   addClue(clue) {
+    if (!this.ensureAuthForWriteAction())
+      return false;
     const newClue = Object.assign({}, clue, {
       id: Date.now().toString(),
       updatedAt: (/* @__PURE__ */ new Date()).toISOString()
     });
     store.clues = [newClue, ...store.clues];
     common_vendor.index.setStorageSync("clues", JSON.stringify(store.clues));
+    return true;
   },
   updateClue(id, data) {
+    if (!this.ensureAuthForWriteAction())
+      return false;
     store.clues = store.clues.map(
       (c) => c.id === id ? Object.assign({}, c, data, {
         updatedAt: (/* @__PURE__ */ new Date()).toISOString()
       }) : c
     );
     common_vendor.index.setStorageSync("clues", JSON.stringify(store.clues));
+    return true;
   },
   deleteClue(id) {
+    if (!this.ensureAuthForWriteAction())
+      return false;
     store.clues = store.clues.filter((c) => c.id !== id);
     common_vendor.index.setStorageSync("clues", JSON.stringify(store.clues));
+    return true;
   },
   updateSendPlan(data) {
+    if (!this.ensureAuthForWriteAction())
+      return false;
     store.sendPlan = Object.assign({}, store.sendPlan, data);
     common_vendor.index.setStorageSync("plan", JSON.stringify(store.sendPlan));
+    return true;
   },
   setSendPlanFromCloud(payload) {
     const p = payload || {};
@@ -136,8 +160,11 @@ const mutations = {
     common_vendor.index.setStorageSync("language", lang);
   },
   setCategoryOrder(order) {
+    if (!this.ensureAuthForWriteAction())
+      return false;
     store.categoryOrder = order;
     common_vendor.index.setStorageSync("clueCategoryOrder", JSON.stringify(order));
+    return true;
   },
   resetAll() {
     store.clues = [];
