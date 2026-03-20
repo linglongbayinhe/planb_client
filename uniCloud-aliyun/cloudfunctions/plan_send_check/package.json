@@ -4,7 +4,8 @@
     "nodemailer": "^6.10.1"
   },
   "extensions": {
-    "uni-cloud-jql": {}
+    "uni-cloud-jql": {},
+    "uni-cloud-sms": {}
   },
   "cloudfunction-config": {
     "triggers": [

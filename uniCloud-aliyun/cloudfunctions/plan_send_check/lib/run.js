@@ -1,62 +1,85 @@
 /**
- * 编排层：主流程——查库 → 发邮件 → 将 send_time 置为 null
+ * 编排层：单次查库 → 邮件/短信双通道发送 → 批量回写 send_time
  */
 'use strict';
 
-const { getEligibleUsers } = require('./query');
+const { getEligibleTargets } = require('./query');
 const { createTransporter, sendPlanEmail } = require('./mail');
+const { sendPlanSms } = require('./sms');
 
 /**
- * 执行完整发送流程
+ * 执行完整发送流程（邮件 + 短信）
  * @param {object} db - uniCloud 数据库实例
  * @param {number} now - 当前时间戳
  * @returns {Promise<object>}
  */
 async function runFullFlow(db, now) {
-	const users = await getEligibleUsers(db, now);
+	const { emailTargets, smsTargets, allCandidateIds } = await getEligibleTargets(db, now);
 
-	if (users.length === 0) {
+	if (allCandidateIds.length === 0) {
 		return { processed: 0, message: '无符合发送条件的用户' };
 	}
 
-	const transporter = createTransporter();
-	if (!transporter) {
-		return { errCode: 'SMTP_NOT_CONFIGURED', errMsg: '邮件服务未配置', processed: 0 };
-	}
-	const results = [];
-
-	for (const user of users) {
-		const { uid, emails, sendOk } = await sendPlanEmail(transporter, user);
-
-		// 发完后将该用户 send_time 置为 null，实现仅执行一次
-		try {
-			await db.collection('uni-id-users').doc(uid).update({ send_time: null });
-		} catch (e) {
-			console.error(`更新 send_time 失败 uid=${uid}`, e);
+	const emailResults = [];
+	if (emailTargets.length > 0) {
+		const transporter = createTransporter();
+		if (transporter) {
+			for (const user of emailTargets) {
+				emailResults.push(await sendPlanEmail(transporter, user));
+			}
+		} else {
+			console.warn('SMTP 未配置，跳过邮件发送');
 		}
-
-		results.push({ uid, emails, sendOk });
 	}
 
-	return { processed: results.length, results };
+	const smsResults = [];
+	for (const user of smsTargets) {
+		smsResults.push(await sendPlanSms(user));
+	}
+
+	try {
+		const _ = db.command;
+		await db.collection('uni-id-users')
+			.where({ _id: _.in(allCandidateIds) })
+			.update({ send_time: null });
+	} catch (e) {
+		console.error('批量更新 send_time 失败', e);
+	}
+
+	return {
+		processed: allCandidateIds.length,
+		email: { count: emailResults.length, results: emailResults },
+		sms: { count: smsResults.length, results: smsResults }
+	};
 }
 
 /**
- * 仅查询模式：只返回待发送用户列表，不发邮件不写库
+ * 仅查询模式：返回双通道命中统计与样例，不发送不写库
  * @param {object} db - uniCloud 数据库实例
  * @param {number} now - 当前时间戳
  * @returns {Promise<object>}
  */
 async function runDryRun(db, now) {
-	const users = await getEligibleUsers(db, now);
+	const { emailTargets, smsTargets, allCandidateIds } = await getEligibleTargets(db, now);
 	return {
 		dryRun: true,
-		count: users.length,
-		users: users.map(u => ({
-			_id: u._id,
-			send_display_name: u.send_display_name,
-			send_emails: u.send_emails
-		}))
+		totalCandidates: allCandidateIds.length,
+		email: {
+			count: emailTargets.length,
+			samples: emailTargets.slice(0, 5).map(u => ({
+				_id: u._id,
+				send_display_name: u.send_display_name,
+				send_emails: u.send_emails
+			}))
+		},
+		sms: {
+			count: smsTargets.length,
+			samples: smsTargets.slice(0, 5).map(u => ({
+				_id: u._id,
+				send_display_name: u.send_display_name,
+				send_phones: u.send_phones
+			}))
+		}
 	};
 }
 
