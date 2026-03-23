@@ -15,7 +15,7 @@
       }
     }
   },
-  "SMTP_USER": "planb@vip.yoyospace.cc",
+  "SMTP_USER": "planb@yoyospace.cc",
   "SMTP_PASS": "YOUyou123456",
   "SMTP_HOST": "smtpdm.aliyun.com",
   "SMTP_PORT": 465,

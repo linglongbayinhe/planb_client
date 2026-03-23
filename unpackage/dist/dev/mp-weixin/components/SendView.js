@@ -272,10 +272,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({ title: "查询发送测试中...", mask: true });
       try {
         const res = await common_vendor._r.callFunction({
-          name: "plan_send_check",
-          data: {
-            clientDebugToken: `send-btn-${Date.now()}`
-          }
+          name: "plan_send_check"
         });
         const result = res && res.result || {};
         if (result.errCode) {

@@ -3,36 +3,83 @@
  */
 'use strict';
 
-const nodemailer = require('nodemailer');
 const path = require('path');
+const fs = require('fs');
 const createConfig = require('uni-config-center');
 /** 显式指向云函数包内的 common，避免 require 解析到错误目录时读不到 uni-id/config.json */
 const UNI_CONFIG_ROOT = path.join(__dirname, '../../common/uni-config-center');
 const uniIdConfig = createConfig({ pluginId: 'uni-id', root: UNI_CONFIG_ROOT });
+const MODULE_CONFIG_ROOT = (() => {
+	try {
+		return path.dirname(require.resolve('uni-config-center/package.json'));
+	} catch (_) {
+		return '';
+	}
+})();
+const uniIdConfigModuleRoot = MODULE_CONFIG_ROOT ? createConfig({ pluginId: 'uni-id', root: MODULE_CONFIG_ROOT }) : null;
+/** 与云函数同目录的本地 SMTP 配置（随 plan_send_check 上传），不依赖 FC 环境变量与 common 挂载 */
+const LOCAL_SMTP_PATH = path.join(__dirname, '..', 'smtp.config.json');
+let _localSmtpCache;
+let _nodemailerCache;
+function loadLocalSmtpFile() {
+	if (_localSmtpCache !== undefined) return _localSmtpCache;
+	_localSmtpCache = {};
+	try {
+		if (fs.existsSync(LOCAL_SMTP_PATH)) {
+			_localSmtpCache = JSON.parse(fs.readFileSync(LOCAL_SMTP_PATH, 'utf8')) || {};
+		}
+	} catch (_) {
+		_localSmtpCache = {};
+	}
+	return _localSmtpCache;
+}
+function getNodemailer() {
+	if (_nodemailerCache) return _nodemailerCache;
+	try {
+		_nodemailerCache = require('nodemailer');
+		return _nodemailerCache;
+	} catch (e) {
+		return null;
+	}
+}
 
 function getSmtpConfig() {
 	const c = (key, def) => {
 		const envVal = process.env[key];
 		if (envVal != null && envVal !== '') return envVal;
-		const configVal = uniIdConfig.config(key);
-		return configVal != null ? configVal : def;
+		const forcedVal = uniIdConfig.config(key);
+		if (forcedVal != null && forcedVal !== '') return forcedVal;
+		if (uniIdConfigModuleRoot) {
+			const moduleVal = uniIdConfigModuleRoot.config(key);
+			if (moduleVal != null && moduleVal !== '') return moduleVal;
+		}
+		const local = loadLocalSmtpFile();
+		const lv = local[key];
+		if (lv != null && String(lv).trim() !== '') return String(lv).trim();
+		return def;
 	};
-	return {
+	const cfg = {
 		host: c('SMTP_HOST', ''),
 		port: parseInt(c('SMTP_PORT', '465'), 10),
 		user: c('SMTP_USER', ''),
 		pass: c('SMTP_PASS', ''),
 		from: c('SMTP_FROM', '') || c('SMTP_USER', '')
 	};
+	return cfg;
 }
 /**
  * 创建 SMTP transporter（使用环境变量 SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS）
  * @returns {object | null} 成功返回 transporter，失败返回 null
  */
 function createTransporter() {
+	const nodemailer = getNodemailer();
+	if (!nodemailer) {
+		console.error('邮件依赖 nodemailer 加载失败，请重新上传 plan_send_check 并确保依赖完整安装');
+		return null;
+	}
 	const { host, port, user, pass } = getSmtpConfig();
 	if (!host || !user || !pass) {
-		console.error('SMTP 未配置：请在阿里云 FC 环境变量或 common/uni-config-center/uni-id/config.json 中配置 SMTP_HOST, SMTP_USER, SMTP_PASS');
+		console.error('SMTP 未配置：请在阿里云 FC 环境变量、common/uni-config-center/uni-id/config.json，或与 plan_send_check 同级的 smtp.config.json 中配置 SMTP_HOST, SMTP_USER, SMTP_PASS');
 		return null;
 	}
 
