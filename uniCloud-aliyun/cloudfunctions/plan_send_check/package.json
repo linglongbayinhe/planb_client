@@ -13,7 +13,7 @@
       {
         "name": "timer_plan_send_check",
         "type": "timer",
-        "config": "0 0 */24 * * * *"
+        "config": "0 0 0 */1 * * *"
       }
     ],
     "timeout": 120

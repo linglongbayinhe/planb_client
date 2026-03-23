@@ -15,11 +15,11 @@
       }
     }
   },
-  "SMTP_USER": "linglongbayinhe@163.com",
-  "SMTP_PASS": "XJscVfXKZwRtqu6i",
-  "SMTP_HOST": "smtp.163.com",
+  "SMTP_USER": "planb@vip.yoyospace.cc",
+  "SMTP_PASS": "YOUyou123456",
+  "SMTP_HOST": "smtpdm.aliyun.com",
   "SMTP_PORT": 465,
-  "SMTP_FROM": "linglongbayinhe@163.com",
+  "SMTP_FROM": "planb@vip.yoyospace.cc",
   "SMS_APPID": "__UNI__40F5868",
   "SMS_TEMPLATE_ID": "uni_sms_test",
   "SMS_DATA_MAP": {

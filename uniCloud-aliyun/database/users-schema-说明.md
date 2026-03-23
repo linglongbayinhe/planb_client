@@ -68,7 +68,7 @@
 ## 四、其他文件是否需调整
 
 - **云函数 `set_enable_sending`**：无需修改，继续使用 `db.collection('users').doc(uid).set({ enable_sending }, { merge: true })` 即可。
-- **云函数 `register`**：当前为脚手架空实现。若使用 uni-id 统一注册，需依赖 uni-id-co 的注册接口或自建注册云函数写 `users` 表；写入走 MongoDB API，不受本次 schema 权限限制。
+- **云对象 `register`**：已移除（当前仅使用微信授权登录，邮箱注册功能不再需要）。
 - **前端**：若通过 clientDB 读/写用户表（含 `send_emails`、`send_phones`、`enable_sending`、`send_message`），需在请求中携带 uni-id 登录态（token），且只能操作当前用户文档；无需因本次 schema 变更改业务逻辑，除非之前依赖「可读写他人文档」。
 
 ---
