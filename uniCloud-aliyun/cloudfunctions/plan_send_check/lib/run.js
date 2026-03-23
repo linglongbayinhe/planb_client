@@ -21,8 +21,9 @@ async function runFullFlow(db, now) {
 	}
 
 	const emailResults = [];
+	let transporter = null;
 	if (emailTargets.length > 0) {
-		const transporter = createTransporter();
+		transporter = createTransporter();
 		if (transporter) {
 			for (const user of emailTargets) {
 				emailResults.push(await sendPlanEmail(transporter, user));
@@ -37,11 +38,26 @@ async function runFullFlow(db, now) {
 		smsResults.push(await sendPlanSms(user));
 	}
 
+	/** 仅当某通道实际发送成功时才清除 send_time，避免「未发出却清空」导致后续永远查不到人 */
+	const idsToClear = new Set();
+	if (transporter) {
+		for (let i = 0; i < emailResults.length; i++) {
+			const r = emailResults[i];
+			if (r && r.sendOk && r.emails > 0) idsToClear.add(r.uid);
+		}
+	}
+	for (let i = 0; i < smsResults.length; i++) {
+		const r = smsResults[i];
+		if (r && r.sendOk && r.phones > 0) idsToClear.add(r.uid);
+	}
+
 	try {
-		const _ = db.command;
-		await db.collection('uni-id-users')
-			.where({ _id: _.in(allCandidateIds) })
-			.update({ send_time: null });
+		if (idsToClear.size > 0) {
+			const _ = db.command;
+			await db.collection('uni-id-users')
+				.where({ _id: _.in([...idsToClear]) })
+				.update({ send_time: null });
+		}
 	} catch (e) {
 		console.error('批量更新 send_time 失败', e);
 	}

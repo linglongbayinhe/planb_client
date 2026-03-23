@@ -196,10 +196,17 @@
 			</view>
 		</view>
 
-		<!-- 临时：30 秒后触发（测试用） -->
-		<view class="plan-btn-wrap">
-			<view class="plan-btn plan-btn-test" @click="trigger30Sec">
-				<text class="plan-btn-text">预计日期设为 30 秒后</text>
+		<!-- 临时测试操作 -->
+		<view class="plan-btn-wrap plan-test-row">
+			<view class="plan-btn plan-btn-test plan-btn-half" @click="trigger30Sec">
+				<text class="plan-btn-text">刷新日期30秒后</text>
+			</view>
+			<view
+				class="plan-btn plan-btn-check plan-btn-half"
+				:class="{ 'plan-btn-disabled': sendCheckLoading }"
+				@click="runSendCheckTest"
+			>
+				<text class="plan-btn-text">{{ sendCheckLoading ? '查询中...' : '查询发送测试' }}</text>
 			</view>
 		</view>
 
@@ -223,6 +230,7 @@
 				emailInput: '',
 				phoneInput: '',
 				notifyExpanded: false,
+				sendCheckLoading: false,
 				maxEmails: 3,
 				maxPhones: 3,
 				displayNameLocal: '',
@@ -450,6 +458,41 @@
 					uni.showToast({ title: '已更新预期日期为 30 秒后', icon: 'success' })
 				} catch (e) {
 					uni.showToast({ title: (e && e.message) || '设置失败', icon: 'none' })
+				}
+			},
+			async runSendCheckTest() {
+				if (!mutations.ensureAuthForWriteAction()) return
+				if (this.sendCheckLoading) return
+				this.sendCheckLoading = true
+				uni.showLoading({ title: '查询发送测试中...', mask: true })
+				try {
+					const res = await uniCloud.callFunction({
+						name: 'plan_send_check',
+						data: {
+							clientDebugToken: `send-btn-${Date.now()}`
+						}
+					})
+					const result = (res && res.result) || {}
+					if (result.errCode) {
+						throw new Error(result.errMsg || result.message || '执行失败，请稍后重试')
+					}
+					const processed = Number(result.processed || 0)
+					const emailCount = Number((result.email && result.email.count) || 0)
+					const smsCount = Number((result.sms && result.sms.count) || 0)
+					uni.showToast({
+						title: `处理${processed} 邮${emailCount} 短${smsCount}`,
+						icon: 'none',
+						duration: 2500
+					})
+				} catch (e) {
+					uni.showToast({
+						title: (e && e.message) || '执行失败，请稍后重试',
+						icon: 'none',
+						duration: 2500
+					})
+				} finally {
+					this.sendCheckLoading = false
+					uni.hideLoading()
 				}
 			}
 		}
@@ -859,6 +902,12 @@
 		padding: 4px 16px 12px;
 	}
 
+	.plan-test-row {
+		display: flex;
+		flex-direction: row;
+		gap: 10px;
+	}
+
 	.plan-btn {
 		width: 100%;
 		height: 52px;
@@ -895,6 +944,19 @@
 
 	.plan-btn-test {
 		background-color: #8E8E93;
+	}
+
+	.plan-btn-check {
+		background-color: #34C759;
+	}
+
+	.plan-btn-half {
+		flex: 1;
+		width: auto;
+	}
+
+	.plan-btn-disabled {
+		opacity: 0.7;
 	}
 
 	.plan-btn-text {

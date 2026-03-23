@@ -4,8 +4,11 @@
 'use strict';
 
 const nodemailer = require('nodemailer');
+const path = require('path');
 const createConfig = require('uni-config-center');
-const uniIdConfig = createConfig({ pluginId: 'uni-id' });
+/** 显式指向云函数包内的 common，避免 require 解析到错误目录时读不到 uni-id/config.json */
+const UNI_CONFIG_ROOT = path.join(__dirname, '../../common/uni-config-center');
+const uniIdConfig = createConfig({ pluginId: 'uni-id', root: UNI_CONFIG_ROOT });
 
 function getSmtpConfig() {
 	const c = (key, def) => {

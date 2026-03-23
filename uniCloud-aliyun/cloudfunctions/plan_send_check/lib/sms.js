@@ -3,8 +3,10 @@
  */
 'use strict';
 
+const path = require('path');
 const createConfig = require('uni-config-center');
-const uniIdConfig = createConfig({ pluginId: 'uni-id' });
+const UNI_CONFIG_ROOT = path.join(__dirname, '../../common/uni-config-center');
+const uniIdConfig = createConfig({ pluginId: 'uni-id', root: UNI_CONFIG_ROOT });
 
 const MAX_PHONES_PER_BATCH = 50;
 
@@ -59,6 +61,11 @@ function cleanPhones(user) {
  * @returns {Promise<{ uid: string, phones: number, sendOk: boolean }>}
  */
 async function sendPlanSms(user) {
+	const hasSendSmsApi = !!(typeof uniCloud !== 'undefined' && uniCloud && typeof uniCloud.sendSms === 'function');
+	if (!hasSendSmsApi) {
+		console.error('SMS 能力不可用：uniCloud.sendSms 不存在，请检查 uni-cloud-sms / uni-open-bridge-common 扩展是否恢复');
+		return { uid: user && user._id, phones: 0, sendOk: false };
+	}
 	const { appid, templateId, dataMap } = getSmsConfig();
 	if (!appid || !templateId) {
 		console.error('SMS 未配置：请配置 SMS_APPID 和 SMS_TEMPLATE_ID');
@@ -98,6 +105,10 @@ async function sendPlanSms(user) {
  * @param {string} phone - 目标手机号
  */
 async function sendTestSms(phone) {
+	const hasSendSmsApi = !!(typeof uniCloud !== 'undefined' && uniCloud && typeof uniCloud.sendSms === 'function');
+	if (!hasSendSmsApi) {
+		throw new Error('SMS 能力不可用：uniCloud.sendSms 不存在，请检查 uni-cloud-sms / uni-open-bridge-common 扩展是否恢复');
+	}
 	const { appid, templateId, dataMap } = getSmsConfig();
 	if (!appid || !templateId) {
 		throw new Error('SMS 未配置：请配置 SMS_APPID 和 SMS_TEMPLATE_ID');

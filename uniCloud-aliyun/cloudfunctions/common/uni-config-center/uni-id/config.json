@@ -1,0 +1,29 @@
+{
+  "passwordSecret": "passwordSecret-demo",
+  "tokenSecret": "tokenSecret-demo",
+  "tokenExpiresThreshold": 600,
+  "passwordErrorLimit": 6,
+  "bindTokenToDevice": false,
+  "passwordInvalidLimit": 6,
+  "passwordInvalidTime": 86400,
+  "multipleSessions": false,
+  "mp-weixin": {
+    "oauth": {
+      "weixin": {
+        "appid": "wx8e293e6f73b4fe8b",
+        "appsecret": "b3846247b9984887f9955d0fdfc70e63"
+      }
+    }
+  },
+  "SMTP_USER": "linglongbayinhe@163.com",
+  "SMTP_PASS": "XJscVfXKZwRtqu6i",
+  "SMTP_HOST": "smtp.163.com",
+  "SMTP_PORT": 465,
+  "SMTP_FROM": "linglongbayinhe@163.com",
+  "SMS_APPID": "__UNI__40F5868",
+  "SMS_TEMPLATE_ID": "uni_sms_test",
+  "SMS_DATA_MAP": {
+    "code": "lala123456"
+    
+  }
+}
