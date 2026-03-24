@@ -1,1 +1,2 @@
 uniCloud-aliyun/cloudfunctions/plan_send_check/smtp.config.json
+.cursor/*.log

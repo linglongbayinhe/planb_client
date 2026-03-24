@@ -3,27 +3,60 @@
  */
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const createConfig = require('uni-config-center');
 const UNI_CONFIG_ROOT = path.join(__dirname, '../../common/uni-config-center');
 const uniIdConfig = createConfig({ pluginId: 'uni-id', root: UNI_CONFIG_ROOT });
+const MODULE_CONFIG_ROOT = (() => {
+	try {
+		return path.dirname(require.resolve('uni-config-center/package.json'));
+	} catch (_) {
+		return '';
+	}
+})();
+const uniIdConfigModuleRoot = MODULE_CONFIG_ROOT ? createConfig({ pluginId: 'uni-id', root: MODULE_CONFIG_ROOT }) : null;
+const LOCAL_SMS_PATH = path.join(__dirname, '..', 'sms.config.json');
+let _localSmsCache;
 
 const MAX_PHONES_PER_BATCH = 50;
+
+function loadLocalSmsFile() {
+	if (_localSmsCache !== undefined) return _localSmsCache;
+	_localSmsCache = {};
+	try {
+		if (fs.existsSync(LOCAL_SMS_PATH)) {
+			_localSmsCache = JSON.parse(fs.readFileSync(LOCAL_SMS_PATH, 'utf8')) || {};
+		}
+	} catch (_) {
+		_localSmsCache = {};
+	}
+	return _localSmsCache;
+}
 
 function getSmsConfig() {
 	const c = (key, def) => {
 		const envVal = process.env[key];
 		if (envVal != null && envVal !== '') return envVal;
 		const configVal = uniIdConfig.config(key);
-		return configVal != null ? configVal : def;
+		if (configVal != null && configVal !== '') return configVal;
+		if (uniIdConfigModuleRoot) {
+			const moduleVal = uniIdConfigModuleRoot.config(key);
+			if (moduleVal != null && moduleVal !== '') return moduleVal;
+		}
+		const local = loadLocalSmsFile();
+		const localVal = local[key];
+		if (localVal != null && String(localVal).trim() !== '') return localVal;
+		return def;
 	};
 
 	const rawMap = c('SMS_DATA_MAP', '{}');
-	return {
+	const cfg = {
 		appid: c('SMS_APPID', ''),
 		templateId: c('SMS_TEMPLATE_ID', ''),
 		dataMap: typeof rawMap === 'string' ? JSON.parse(rawMap) : rawMap
 	};
+	return cfg;
 }
 
 /**

@@ -1,0 +1,8 @@
+{
+  "SMS_APPID": "__UNI__40F5868",
+  "SMS_TEMPLATE_ID": "37984",
+  "SMS_DATA_MAP": {
+    "send_display_name": "send_display_name",
+    "send_message": "send_message"
+  }
+}

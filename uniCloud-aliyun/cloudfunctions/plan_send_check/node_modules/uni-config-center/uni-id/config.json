@@ -21,9 +21,9 @@
   "SMTP_PORT": 465,
   "SMTP_FROM": "planb@vip.yoyospace.cc",
   "SMS_APPID": "__UNI__40F5868",
-  "SMS_TEMPLATE_ID": "uni_sms_test",
+  "SMS_TEMPLATE_ID": "37984",
   "SMS_DATA_MAP": {
-    "code": "lala123456"
-    
+    "send_display_name": "send_display_name",
+    "send_message": "send_message"
   }
 }
