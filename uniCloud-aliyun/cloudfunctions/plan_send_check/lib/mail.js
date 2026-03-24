@@ -6,6 +6,13 @@
 const path = require('path');
 const fs = require('fs');
 const createConfig = require('uni-config-center');
+const { mapWithConcurrency } = require('./concurrency');
+
+/** 单用户多收件人并行上限；环境变量 EMAIL_TO_CONCURRENCY（默认 3） */
+const EMAIL_TO_CONCURRENCY = Math.max(
+	1,
+	Number.parseInt(process.env.EMAIL_TO_CONCURRENCY || '3', 10) || 3
+);
 /** 显式指向云函数包内的 common，避免 require 解析到错误目录时读不到 uni-id/config.json */
 const UNI_CONFIG_ROOT = path.join(__dirname, '../../common/uni-config-center');
 const uniIdConfig = createConfig({ pluginId: 'uni-id', root: UNI_CONFIG_ROOT });
@@ -111,10 +118,15 @@ async function sendPlanEmail(transporter, user) {
 谢谢你的帮助。
 —— Plan B（后手）`;
 
-	let sendOk = true;
-	for (const to of emails) {
-		const toEmail = String(to).trim().toLowerCase();
-		if (!toEmail) continue;
+	const toList = emails
+		.map((to) => String(to || '').trim().toLowerCase())
+		.filter(Boolean);
+
+	if (toList.length === 0) {
+		return { uid, emails: 0, sendOk: true };
+	}
+
+	const sendOutcomes = await mapWithConcurrency(toList, EMAIL_TO_CONCURRENCY, async (toEmail) => {
 		try {
 			await transporter.sendMail({
 				from: fromAddr,
@@ -122,12 +134,14 @@ async function sendPlanEmail(transporter, user) {
 				subject: '【Plan B】人生备份计划通知',
 				text: body
 			});
+			return true;
 		} catch (e) {
 			console.error(`发送邮件失败 uid=${uid} to=${toEmail}`, e);
-			sendOk = false;
+			return false;
 		}
-	}
+	});
 
+	const sendOk = sendOutcomes.every(Boolean);
 	return { uid, emails: emails.length, sendOk };
 }
 

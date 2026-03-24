@@ -68,8 +68,12 @@ const _sfc_main = {
         }
       }
       store_index.mutations.clearAuthSession();
-      this.showAuthGate = true;
+      await this.$nextTick();
+      await this.handleAuthorize({ skipLoading: true });
       this.booting = false;
+      if (!store_index.store.currentUser) {
+        this.showAuthGate = true;
+      }
     },
     async pullBootstrapFromCloud() {
       try {
@@ -86,7 +90,8 @@ const _sfc_main = {
         return false;
       }
     },
-    async handleAuthorize() {
+    async handleAuthorize(opts) {
+      const skipLoading = !!(opts && opts.skipLoading);
       if (this.authLoading)
         return;
       const provider = this.resolveProvider();
@@ -95,7 +100,9 @@ const _sfc_main = {
         return;
       }
       this.authLoading = true;
-      common_vendor.index.showLoading({ title: "授权中...", mask: true });
+      if (!skipLoading) {
+        common_vendor.index.showLoading({ title: "授权中...", mask: true });
+      }
       try {
         const loginRes = await new Promise((resolve, reject) => {
           common_vendor.index.login({
@@ -110,7 +117,7 @@ const _sfc_main = {
         const obj = common_vendor._r.importObject("auth_provider", { customUI: true });
         const result = await obj.loginByProvider(provider, code, {});
         if (!result || result.code !== 0 || !result.token) {
-          common_vendor.index.__f__("error", "at pages/index/index.vue:168", "[auth_provider/loginByProvider] fail result:", result);
+          common_vendor.index.__f__("error", "at pages/index/index.vue:175", "[auth_provider/loginByProvider] fail result:", result);
           throw new Error(result && result.message || "授权登录失败");
         }
         store_index.mutations.saveAuthToken({
@@ -126,7 +133,9 @@ const _sfc_main = {
         common_vendor.index.showToast({ title: e && e.message || "授权登录失败", icon: "none" });
       } finally {
         this.authLoading = false;
-        common_vendor.index.hideLoading();
+        if (!skipLoading) {
+          common_vendor.index.hideLoading();
+        }
       }
     },
     handleCancel() {

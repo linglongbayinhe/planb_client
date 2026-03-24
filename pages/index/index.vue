@@ -126,8 +126,12 @@
 					}
 				}
 				mutations.clearAuthSession()
-				this.showAuthGate = true
+				await this.$nextTick()
+				await this.handleAuthorize({ skipLoading: true })
 				this.booting = false
+				if (!store.currentUser) {
+					this.showAuthGate = true
+				}
 			},
 			async pullBootstrapFromCloud() {
 				try {
@@ -143,7 +147,8 @@
 					return false
 				}
 			},
-			async handleAuthorize() {
+			async handleAuthorize(opts) {
+				const skipLoading = !!(opts && opts.skipLoading)
 				if (this.authLoading) return
 				const provider = this.resolveProvider()
 				if (!provider) {
@@ -151,7 +156,9 @@
 					return
 				}
 				this.authLoading = true
-				uni.showLoading({ title: '授权中...', mask: true })
+				if (!skipLoading) {
+					uni.showLoading({ title: '授权中...', mask: true })
+				}
 				try {
 					const loginRes = await new Promise((resolve, reject) => {
 						uni.login({
@@ -180,7 +187,9 @@
 					uni.showToast({ title: (e && e.message) || '授权登录失败', icon: 'none' })
 				} finally {
 					this.authLoading = false
-					uni.hideLoading()
+					if (!skipLoading) {
+						uni.hideLoading()
+					}
 				}
 			},
 			handleCancel() {

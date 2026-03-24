@@ -1,5 +1,6 @@
 /**
  * 短信发送层：读取配置、清洗手机号、分批调用 uniCloud.sendSms
+ * dataMap：key 为短信模板占位符名，value 为用户文档字段名（示例：{ "name": "send_display_name", "code": "send_message" }）
  */
 'use strict';
 
@@ -18,8 +19,16 @@ const MODULE_CONFIG_ROOT = (() => {
 const uniIdConfigModuleRoot = MODULE_CONFIG_ROOT ? createConfig({ pluginId: 'uni-id', root: MODULE_CONFIG_ROOT }) : null;
 const LOCAL_SMS_PATH = path.join(__dirname, '..', 'sms.config.json');
 let _localSmsCache;
+let _smsConfigResolved;
 
 const MAX_PHONES_PER_BATCH = 50;
+
+const SMS_API_MISSING_MSG =
+	'SMS 能力不可用：uniCloud.sendSms 不存在，请检查 uni-cloud-sms / uni-open-bridge-common 扩展是否恢复';
+
+function isSendSmsAvailable() {
+	return typeof uniCloud !== 'undefined' && uniCloud && typeof uniCloud.sendSms === 'function';
+}
 
 function loadLocalSmsFile() {
 	if (_localSmsCache !== undefined) return _localSmsCache;
@@ -34,7 +43,28 @@ function loadLocalSmsFile() {
 	return _localSmsCache;
 }
 
+/**
+ * 将 SMS_DATA_MAP 规范为普通对象；非法 JSON 或非对象回退 {}
+ */
+function parseDataMap(rawMap) {
+	let parsed = rawMap;
+	if (typeof rawMap === 'string') {
+		try {
+			parsed = JSON.parse(rawMap);
+		} catch (e) {
+			console.error('SMS_DATA_MAP JSON 解析失败，已回退为空对象', e);
+			return {};
+		}
+	}
+	if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+		return parsed;
+	}
+	return {};
+}
+
 function getSmsConfig() {
+	if (_smsConfigResolved !== undefined) return _smsConfigResolved;
+
 	const c = (key, def) => {
 		const envVal = process.env[key];
 		if (envVal != null && envVal !== '') return envVal;
@@ -51,12 +81,12 @@ function getSmsConfig() {
 	};
 
 	const rawMap = c('SMS_DATA_MAP', '{}');
-	const cfg = {
+	_smsConfigResolved = {
 		appid: c('SMS_APPID', ''),
 		templateId: c('SMS_TEMPLATE_ID', ''),
-		dataMap: typeof rawMap === 'string' ? JSON.parse(rawMap) : rawMap
+		dataMap: parseDataMap(rawMap)
 	};
-	return cfg;
+	return _smsConfigResolved;
 }
 
 /**
@@ -94,18 +124,22 @@ function cleanPhones(user) {
  * @returns {Promise<{ uid: string, phones: number, sendOk: boolean }>}
  */
 async function sendPlanSms(user) {
-	const hasSendSmsApi = !!(typeof uniCloud !== 'undefined' && uniCloud && typeof uniCloud.sendSms === 'function');
-	if (!hasSendSmsApi) {
-		console.error('SMS 能力不可用：uniCloud.sendSms 不存在，请检查 uni-cloud-sms / uni-open-bridge-common 扩展是否恢复');
-		return { uid: user && user._id, phones: 0, sendOk: false };
+	if (!user || user._id == null) {
+		return { uid: undefined, phones: 0, sendOk: false };
 	}
+	const uid = user._id;
+
+	if (!isSendSmsAvailable()) {
+		console.error(SMS_API_MISSING_MSG);
+		return { uid, phones: 0, sendOk: false };
+	}
+
 	const { appid, templateId, dataMap } = getSmsConfig();
 	if (!appid || !templateId) {
 		console.error('SMS 未配置：请配置 SMS_APPID 和 SMS_TEMPLATE_ID');
-		return { uid: user._id, phones: 0, sendOk: false };
+		return { uid, phones: 0, sendOk: false };
 	}
 
-	const uid = user._id;
 	const phones = cleanPhones(user);
 	if (phones.length === 0) {
 		return { uid, phones: 0, sendOk: true };
@@ -116,6 +150,7 @@ async function sendPlanSms(user) {
 
 	for (let i = 0; i < phones.length; i += MAX_PHONES_PER_BATCH) {
 		const batch = phones.slice(i, i + MAX_PHONES_PER_BATCH);
+		const batchIndex = Math.floor(i / MAX_PHONES_PER_BATCH) + 1;
 		try {
 			const params = { appid, templateId, data };
 			if (batch.length === 1) {
@@ -125,7 +160,7 @@ async function sendPlanSms(user) {
 			}
 			await uniCloud.sendSms(params);
 		} catch (e) {
-			console.error(`发送短信失败 uid=${uid} phones=${batch.join(',')}`, e);
+			console.error(`发送短信失败 uid=${uid} batch=${batchIndex} count=${batch.length}`, e);
 			sendOk = false;
 		}
 	}
@@ -138,9 +173,8 @@ async function sendPlanSms(user) {
  * @param {string} phone - 目标手机号
  */
 async function sendTestSms(phone) {
-	const hasSendSmsApi = !!(typeof uniCloud !== 'undefined' && uniCloud && typeof uniCloud.sendSms === 'function');
-	if (!hasSendSmsApi) {
-		throw new Error('SMS 能力不可用：uniCloud.sendSms 不存在，请检查 uni-cloud-sms / uni-open-bridge-common 扩展是否恢复');
+	if (!isSendSmsAvailable()) {
+		throw new Error(SMS_API_MISSING_MSG);
 	}
 	const { appid, templateId, dataMap } = getSmsConfig();
 	if (!appid || !templateId) {

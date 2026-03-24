@@ -203,10 +203,19 @@
 			</view>
 			<view
 				class="plan-btn plan-btn-check plan-btn-half"
-				:class="{ 'plan-btn-disabled': sendCheckLoading }"
+				:class="{ 'plan-btn-disabled': sendCheckBusy }"
 				@click="runSendCheckTest"
 			>
-				<text class="plan-btn-text">{{ sendCheckLoading ? '查询中...' : '查询发送测试' }}</text>
+				<text class="plan-btn-text">{{ sendCheckLoading ? '检测中...' : '检测发送' }}</text>
+			</view>
+		</view>
+		<view class="plan-btn-wrap">
+			<view
+				class="plan-btn plan-btn-dryrun"
+				:class="{ 'plan-btn-disabled': sendCheckBusy }"
+				@click="runSendCheckDryRun"
+			>
+				<text class="plan-btn-text">{{ sendDryRunLoading ? '模拟中...' : '模拟检测' }}</text>
 			</view>
 		</view>
 
@@ -231,6 +240,7 @@
 				phoneInput: '',
 				notifyExpanded: false,
 				sendCheckLoading: false,
+				sendDryRunLoading: false,
 				maxEmails: 3,
 				maxPhones: 3,
 				displayNameLocal: '',
@@ -272,6 +282,9 @@
 			},
 			sendPlanRef() {
 				return store.sendPlan
+			},
+			sendCheckBusy() {
+				return this.sendCheckLoading || this.sendDryRunLoading
 			}
 		},
 		watch: {
@@ -462,9 +475,9 @@
 			},
 			async runSendCheckTest() {
 				if (!mutations.ensureAuthForWriteAction()) return
-				if (this.sendCheckLoading) return
+				if (this.sendCheckBusy) return
 				this.sendCheckLoading = true
-				uni.showLoading({ title: '查询发送测试中...', mask: true })
+				uni.showLoading({ title: '检测发送中...', mask: true })
 				try {
 					const res = await uniCloud.callFunction({
 						name: 'plan_send_check'
@@ -489,6 +502,39 @@
 					})
 				} finally {
 					this.sendCheckLoading = false
+					uni.hideLoading()
+				}
+			},
+			async runSendCheckDryRun() {
+				if (!mutations.ensureAuthForWriteAction()) return
+				if (this.sendCheckBusy) return
+				this.sendDryRunLoading = true
+				uni.showLoading({ title: '模拟检测中...', mask: true })
+				try {
+					const res = await uniCloud.callFunction({
+						name: 'plan_send_check',
+						data: { dryRun: true }
+					})
+					const result = (res && res.result) || {}
+					if (result.errCode) {
+						throw new Error(result.errMsg || result.message || '执行失败，请稍后重试')
+					}
+					const total = Number(result.totalCandidates || 0)
+					const emailCount = Number((result.email && result.email.count) || 0)
+					const smsCount = Number((result.sms && result.sms.count) || 0)
+					uni.showToast({
+						title: `模拟 候选${total} 邮${emailCount} 短${smsCount}`,
+						icon: 'none',
+						duration: 2500
+					})
+				} catch (e) {
+					uni.showToast({
+						title: (e && e.message) || '执行失败，请稍后重试',
+						icon: 'none',
+						duration: 2500
+					})
+				} finally {
+					this.sendDryRunLoading = false
 					uni.hideLoading()
 				}
 			}
@@ -945,6 +991,10 @@
 
 	.plan-btn-check {
 		background-color: #34C759;
+	}
+
+	.plan-btn-dryrun {
+		background-color: #5856D6;
 	}
 
 	.plan-btn-half {

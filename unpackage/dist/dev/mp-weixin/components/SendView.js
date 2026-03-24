@@ -10,6 +10,7 @@ const _sfc_main = {
       phoneInput: "",
       notifyExpanded: false,
       sendCheckLoading: false,
+      sendDryRunLoading: false,
       maxEmails: 3,
       maxPhones: 3,
       displayNameLocal: "",
@@ -59,6 +60,9 @@ const _sfc_main = {
     },
     sendPlanRef() {
       return store_index.store.sendPlan;
+    },
+    sendCheckBusy() {
+      return this.sendCheckLoading || this.sendDryRunLoading;
     }
   },
   watch: {
@@ -266,10 +270,10 @@ const _sfc_main = {
     async runSendCheckTest() {
       if (!store_index.mutations.ensureAuthForWriteAction())
         return;
-      if (this.sendCheckLoading)
+      if (this.sendCheckBusy)
         return;
       this.sendCheckLoading = true;
-      common_vendor.index.showLoading({ title: "查询发送测试中...", mask: true });
+      common_vendor.index.showLoading({ title: "检测发送中...", mask: true });
       try {
         const res = await common_vendor._r.callFunction({
           name: "plan_send_check"
@@ -294,6 +298,41 @@ const _sfc_main = {
         });
       } finally {
         this.sendCheckLoading = false;
+        common_vendor.index.hideLoading();
+      }
+    },
+    async runSendCheckDryRun() {
+      if (!store_index.mutations.ensureAuthForWriteAction())
+        return;
+      if (this.sendCheckBusy)
+        return;
+      this.sendDryRunLoading = true;
+      common_vendor.index.showLoading({ title: "模拟检测中...", mask: true });
+      try {
+        const res = await common_vendor._r.callFunction({
+          name: "plan_send_check",
+          data: { dryRun: true }
+        });
+        const result = res && res.result || {};
+        if (result.errCode) {
+          throw new Error(result.errMsg || result.message || "执行失败，请稍后重试");
+        }
+        const total = Number(result.totalCandidates || 0);
+        const emailCount = Number(result.email && result.email.count || 0);
+        const smsCount = Number(result.sms && result.sms.count || 0);
+        common_vendor.index.showToast({
+          title: `模拟 候选${total} 邮${emailCount} 短${smsCount}`,
+          icon: "none",
+          duration: 2500
+        });
+      } catch (e) {
+        common_vendor.index.showToast({
+          title: e && e.message || "执行失败，请稍后重试",
+          icon: "none",
+          duration: 2500
+        });
+      } finally {
+        this.sendDryRunLoading = false;
         common_vendor.index.hideLoading();
       }
     }
@@ -368,10 +407,13 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     P: common_vendor.n($options.planEnabled ? "plan-btn-off" : "plan-btn-on"),
     Q: common_vendor.o((...args) => $options.togglePlan && $options.togglePlan(...args), "00"),
     R: common_vendor.o((...args) => $options.trigger30Sec && $options.trigger30Sec(...args), "eb"),
-    S: common_vendor.t($data.sendCheckLoading ? "查询中..." : "查询发送测试"),
-    T: $data.sendCheckLoading ? 1 : "",
-    U: common_vendor.o((...args) => $options.runSendCheckTest && $options.runSendCheckTest(...args), "ec"),
-    V: ($data.statusBarHeight || 0) + "px"
+    S: common_vendor.t($data.sendCheckLoading ? "检测中..." : "检测发送"),
+    T: $options.sendCheckBusy ? 1 : "",
+    U: common_vendor.o((...args) => $options.runSendCheckTest && $options.runSendCheckTest(...args), "4e"),
+    V: common_vendor.t($data.sendDryRunLoading ? "模拟中..." : "模拟检测"),
+    W: $options.sendCheckBusy ? 1 : "",
+    X: common_vendor.o((...args) => $options.runSendCheckDryRun && $options.runSendCheckDryRun(...args), "f6"),
+    Y: ($data.statusBarHeight || 0) + "px"
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-b8a25f91"]]);

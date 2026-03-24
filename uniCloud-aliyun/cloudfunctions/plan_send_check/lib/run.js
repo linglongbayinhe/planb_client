@@ -6,6 +6,19 @@
 const { getEligibleTargets } = require('./query');
 const { createTransporter, sendPlanEmail } = require('./mail');
 const { sendPlanSms } = require('./sms');
+const { mapWithConcurrency } = require('./concurrency');
+
+/** 邮件并行用户数上限；可通过环境变量 EMAIL_SEND_CONCURRENCY 调整（默认 3，避免 SMTP 连数过高） */
+const EMAIL_SEND_CONCURRENCY = Math.max(
+	1,
+	Number.parseInt(process.env.EMAIL_SEND_CONCURRENCY || '3', 10) || 3
+);
+
+/** 短信并行用户数上限，避免触发平台 QPS；可通过环境变量 SMS_SEND_CONCURRENCY 调整（默认 3） */
+const SMS_SEND_CONCURRENCY = Math.max(
+	1,
+	Number.parseInt(process.env.SMS_SEND_CONCURRENCY || '3', 10) || 3
+);
 
 /**
  * 执行完整发送流程（邮件 + 短信）
@@ -20,23 +33,25 @@ async function runFullFlow(db, now) {
 		return { processed: 0, message: '无符合发送条件的用户' };
 	}
 
-	const emailResults = [];
+	let emailResults = [];
 	let transporter = null;
 	if (emailTargets.length > 0) {
 		transporter = createTransporter();
 		if (transporter) {
-			for (const user of emailTargets) {
-				emailResults.push(await sendPlanEmail(transporter, user));
-			}
+			emailResults = await mapWithConcurrency(
+				emailTargets,
+				EMAIL_SEND_CONCURRENCY,
+				(user) => sendPlanEmail(transporter, user)
+			);
 		} else {
 			console.warn('SMTP 未配置，跳过邮件发送');
 		}
 	}
 
-	const smsResults = [];
-	for (const user of smsTargets) {
-		smsResults.push(await sendPlanSms(user));
-	}
+	const smsResults =
+		smsTargets.length === 0
+			? []
+			: await mapWithConcurrency(smsTargets, SMS_SEND_CONCURRENCY, (user) => sendPlanSms(user));
 
 	/** 仅当某通道实际发送成功时才清除 send_time，避免「未发出却清空」导致后续永远查不到人 */
 	const idsToClear = new Set();
