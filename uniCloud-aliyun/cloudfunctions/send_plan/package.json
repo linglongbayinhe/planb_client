@@ -1,5 +1,5 @@
-﻿{
-  "name": "send_phone",
+{
+  "name": "send_plan",
   "dependencies": {
     "send-plan": "file:../common/send-plan"
   },

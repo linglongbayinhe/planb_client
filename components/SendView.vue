@@ -1,4 +1,4 @@
-<template>
+﻿<template>
 	<scroll-view
 		class="send-page"
 		scroll-y
@@ -230,6 +230,7 @@
 
 <script>
 	import { store, mutations } from '../store/index.js'
+	import { syncSendPlanToCloud as syncSendPlanPatch } from '../scripts/sendPlanCloud.js'
 
 	export default {
 		name: 'SendView',
@@ -305,6 +306,13 @@
 			this.syncContentFromStore()
 		},
 		methods: {
+			showSendPlanError(err, fallback = '云端同步失败') {
+				uni.showToast({
+					title: (err && err.errMsg) || fallback,
+					icon: 'none',
+					duration: 2000
+				})
+			},
 			addEmail() {
 				if (!mutations.ensureAuthForWriteAction()) return
 				const email = this.emailInput.trim().toLowerCase()
@@ -319,9 +327,12 @@
 					uni.showToast({ title: '该邮箱已存在', icon: 'none' })
 					return
 				}
-				mutations.updateSendPlan({ emails: [...this.emails, this.emailInput.trim()] })
+				const list = [...this.emails, this.emailInput.trim()]
+				mutations.updateSendPlan({ emails: list })
 				this.emailInput = ''
-				this.syncSendEmailToCloud(email, true)
+				syncSendPlanPatch({ emails: list }, {
+					onError: (err) => this.showSendPlanError(err)
+				})
 			},
 			addPhone() {
 				if (!mutations.ensureAuthForWriteAction()) return
@@ -337,9 +348,12 @@
 					uni.showToast({ title: '该手机号已存在', icon: 'none' })
 					return
 				}
-				mutations.updateSendPlan({ phones: [...this.phones, phone] })
+				const list = [...this.phones, phone]
+				mutations.updateSendPlan({ phones: list })
 				this.phoneInput = ''
-				this.syncSendPhoneToCloud(phone, true)
+				syncSendPlanPatch({ phones: list }, {
+					onError: (err) => this.showSendPlanError(err)
+				})
 			},
 			removeEmail(i) {
 				if (!mutations.ensureAuthForWriteAction()) return
@@ -347,7 +361,11 @@
 				const list = [...this.emails]
 				list.splice(i, 1)
 				mutations.updateSendPlan({ emails: list })
-				if (removedEmail) this.syncSendEmailToCloud(removedEmail, false)
+				if (removedEmail) {
+					syncSendPlanPatch({ emails: list }, {
+						onError: (err) => this.showSendPlanError(err)
+					})
+				}
 			},
 			removePhone(i) {
 				if (!mutations.ensureAuthForWriteAction()) return
@@ -355,32 +373,10 @@
 				const list = [...this.phones]
 				list.splice(i, 1)
 				mutations.updateSendPlan({ phones: list })
-				if (removedPhone) this.syncSendPhoneToCloud(removedPhone, false)
-			},
-			async syncSendEmailToCloud(email, isNew) {
-				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
-				if (!uid) return
-				try {
-					const obj = uniCloud.importObject('send_email')
-					const res = await obj.updateSendEmail(email, isNew, uid)
-					if (res && res.errCode && res.errCode !== 'UID_REQUIRED') {
-						uni.showToast({ title: res.errMsg || '云端同步失败', icon: 'none', duration: 2000 })
-					}
-				} catch (e) {
-					uni.showToast({ title: (e && e.message) || '云端同步失败', icon: 'none', duration: 2000 })
-				}
-			},
-			async syncSendPhoneToCloud(phone, isNew) {
-				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
-				if (!uid) return
-				try {
-					const obj = uniCloud.importObject('send_phone')
-					const res = await obj.updateSendPhone(phone, isNew, uid)
-					if (res && res.errCode && res.errCode !== 'UID_REQUIRED') {
-						uni.showToast({ title: res.errMsg || '云端同步失败', icon: 'none', duration: 2000 })
-					}
-				} catch (e) {
-					uni.showToast({ title: (e && e.message) || '云端同步失败', icon: 'none', duration: 2000 })
+				if (removedPhone) {
+					syncSendPlanPatch({ phones: list }, {
+						onError: (err) => this.showSendPlanError(err)
+					})
 				}
 			},
 			onContentRequireLogin() {
@@ -402,24 +398,12 @@
 				})
 				this.appliedDisplayName = this.displayNameLocal
 				this.appliedCustomGuide = this.customGuideLocal
-				await this.syncSendMessageToCloud()
-			},
-			async syncSendMessageToCloud() {
-				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
-				if (!uid) return
-				try {
-					const obj = uniCloud.importObject('send_message')
-					const res = await obj.updateSendMessage(
-						this.displayNameLocal,
-						this.customGuideLocal,
-						uid
-					)
-					if (res && res.errCode && res.errCode !== 'UID_REQUIRED') {
-						uni.showToast({ title: res.errMsg || '云端同步失败', icon: 'none', duration: 2000 })
-					}
-				} catch (e) {
-					uni.showToast({ title: (e && e.message) || '云端同步失败', icon: 'none', duration: 2000 })
-				}
+				await syncSendPlanPatch({
+					displayName: this.displayNameLocal,
+					customGuide: this.customGuideLocal
+				}, {
+					onError: (err) => this.showSendPlanError(err)
+				})
 			},
 			toggleNotifyExpand() {
 				this.notifyExpanded = !this.notifyExpanded
@@ -434,44 +418,25 @@
 			async togglePlan() {
 				if (!mutations.ensureAuthForWriteAction()) return
 				const newEnabled = !this.planEnabled
-				if (this.planEnabled) {
-					mutations.updateSendPlan({ enabled: false })
-				} else {
-					mutations.updateSendPlan({ enabled: true })
-				}
-				let uid = store.currentUser && (store.currentUser.uid || store.currentUser._id)
-				if (!uid && typeof uniCloud !== 'undefined' && typeof uniCloud.getCurrentUserInfo === 'function') {
-					try {
-						const u = await uniCloud.getCurrentUserInfo()
-						uid = u && (u.uid || u._id)
-					} catch (e) {}
-				}
-				try {
-					const obj = uniCloud.importObject('set_enable_sending')
-					const res = await obj.setEnableSending(newEnabled, uid || undefined)
-					if (res && res.errCode) {
-						const msg = res.errCode === 'UID_REQUIRED'
-							? '请先登录以同步到云端'
-							: (res.errMsg || '同步失败')
-						uni.showToast({ title: msg, icon: 'none' })
-					}
-				} catch (e) {
-					uni.showToast({ title: (e && e.message) || '同步到云端失败', icon: 'none' })
-				}
+				mutations.updateSendPlan({ enabled: newEnabled })
+				const res = await syncSendPlanPatch({ enabled: newEnabled }, {
+					onUidRequired: () => {
+						uni.showToast({ title: '请先登录以后再同步到云端', icon: 'none' })
+					},
+					onError: (err) => this.showSendPlanError(err, '同步失败')
+				})
+				if (res && res.errCode) return
 			},
 			async trigger30Sec() {
 				if (!mutations.ensureAuthForWriteAction()) return
-				try {
-					const obj = uniCloud.importObject('send_time')
-					const res = await obj.updateSendTime(Date.now() + 30000, this.currentUid)
-					if (res && res.errCode) {
-						uni.showToast({ title: res.errMsg || '设置失败', icon: 'none' })
-						return
-					}
-					uni.showToast({ title: '已更新预期日期为 30 秒后', icon: 'success' })
-				} catch (e) {
-					uni.showToast({ title: (e && e.message) || '设置失败', icon: 'none' })
-				}
+				const newSendDateMs = Date.now() + 30000
+				const newSendDateISO = new Date(newSendDateMs).toISOString()
+				mutations.updateSendPlan({ sendDate: newSendDateISO })
+				const res = await syncSendPlanPatch({ sendDate: newSendDateMs }, {
+					onError: (err) => this.showSendPlanError(err, '设置失败')
+				})
+				if (res && res.errCode) return
+				uni.showToast({ title: '已更新预计日期为 30 秒后', icon: 'success' })
 			},
 			async runSendCheckTest() {
 				if (!mutations.ensureAuthForWriteAction()) return

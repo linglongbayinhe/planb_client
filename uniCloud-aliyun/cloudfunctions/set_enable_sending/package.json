@@ -1,6 +1,8 @@
-{
+﻿{
   "name": "set_enable_sending",
-  "dependencies": {},
+  "dependencies": {
+    "send-plan": "file:../common/send-plan"
+  },
   "extensions": {
     "uni-cloud-jql": {}
   }

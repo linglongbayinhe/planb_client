@@ -6193,9 +6193,9 @@ function populateParameters(fromRes, toRes) {
     appVersion: "1.0.0",
     appVersionCode: "100",
     appLanguage: getAppLanguage(hostLanguage),
-    uniCompileVersion: "5.04",
-    uniCompilerVersion: "5.04",
-    uniRuntimeVersion: "5.04",
+    uniCompileVersion: "5.05",
+    uniCompilerVersion: "5.05",
+    uniRuntimeVersion: "5.05",
     uniPlatform: "mp-weixin",
     deviceBrand,
     deviceModel: model,
@@ -6344,9 +6344,9 @@ const getAppBaseInfo = {
       hostTheme: theme,
       isUniAppX: false,
       uniPlatform: "mp-weixin",
-      uniCompileVersion: "5.04",
-      uniCompilerVersion: "5.04",
-      uniRuntimeVersion: "5.04"
+      uniCompileVersion: "5.05",
+      uniCompilerVersion: "5.05",
+      uniRuntimeVersion: "5.05"
     };
     extend(toRes, parameters);
   }
@@ -7131,9 +7131,9 @@ function isConsoleWritable() {
   return isWritable;
 }
 function initRuntimeSocketService() {
-  const hosts = "192.168.3.23,127.0.0.1";
+  const hosts = "198.18.0.1,192.168.3.23,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_j-4YQA";
+  const id = "mp-weixin_BDWwbC";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8388,7 +8388,7 @@ class v {
 function I(e2) {
   return e2 && "string" == typeof e2 ? JSON.parse(e2) : e2;
 }
-const S = true, b = "mp-weixin", A = I(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), T = b, C = I('{"address":["127.0.0.1","192.168.3.23"],"servePort":7000,"debugPort":9000,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","E:/HBuilderX/plugins/unicloud/**/*.js"]}'), P = I('[{"provider":"aliyun","spaceName":"planb","spaceId":"mp-e939fa41-8ae6-4397-959b-8c00f04dd1c2","clientSecret":"8cFAehwd9umTIAtx1GolJA==","endpoint":"https://api.next.bspapp.com","failoverEndpoint":""}]') || [];
+const S = true, b = "mp-weixin", A = I(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), T = b, C = I('{"address":["127.0.0.1","198.18.0.1","192.168.3.23"],"servePort":7000,"debugPort":9000,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","E:/HBuilderX/plugins/unicloud/**/*.js"]}'), P = I('[{"provider":"aliyun","spaceName":"planb","spaceId":"mp-e939fa41-8ae6-4397-959b-8c00f04dd1c2","clientSecret":"8cFAehwd9umTIAtx1GolJA==","endpoint":"https://api.next.bspapp.com","failoverEndpoint":""}]') || [];
 let E = "";
 try {
   E = "__UNI__40F5868";

@@ -1,6 +1,8 @@
-{
+﻿{
   "name": "send_email",
-  "dependencies": {},
+  "dependencies": {
+    "send-plan": "file:../common/send-plan"
+  },
   "extensions": {
     "uni-cloud-jql": {}
   }

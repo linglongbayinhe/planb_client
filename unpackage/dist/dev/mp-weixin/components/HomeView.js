@@ -1,6 +1,7 @@
 "use strict";
 const common_vendor = require("../common/vendor.js");
 const store_index = require("../store/index.js");
+const scripts_sendPlanCloud = require("../scripts/sendPlanCloud.js");
 const _sfc_main = {
   name: "HomeView",
   emits: ["switch-tab"],
@@ -84,6 +85,13 @@ const _sfc_main = {
     }
   },
   methods: {
+    showSendPlanError(err, fallback = "云端同步失败，已保存到本地") {
+      common_vendor.index.showToast({
+        title: err && err.errMsg || fallback,
+        icon: "none",
+        duration: 2e3
+      });
+    },
     startSyncedCountdown() {
       if (this.timeoutId)
         clearTimeout(this.timeoutId);
@@ -112,24 +120,11 @@ const _sfc_main = {
       store_index.mutations.updateSendPlan({ sendDate: newSendDateISO });
       this.startSyncedCountdown();
       common_vendor.index.vibrateShort && common_vendor.index.vibrateShort({ type: "light" });
-      const uid = store_index.store.currentUser && (store_index.store.currentUser._id || store_index.store.currentUser.uid);
-      try {
-        const obj = common_vendor._r.importObject("send_time");
-        const res = await obj.updateSendTime(newSendDateMs, uid);
-        if (res && res.errCode) {
-          common_vendor.index.showToast({
-            title: res.errMsg || "云端同步失败，已保存到本地",
-            icon: "none",
-            duration: 2e3
-          });
-        }
-      } catch (e) {
-        common_vendor.index.showToast({
-          title: e && e.message || "云端同步失败，已保存到本地",
-          icon: "none",
-          duration: 2e3
-        });
-      }
+      const res = await scripts_sendPlanCloud.syncSendPlanToCloud({ sendDate: newSendDateMs }, {
+        onError: (err) => this.showSendPlanError(err)
+      });
+      if (res && res.errCode)
+        return;
     },
     goToClues() {
       common_vendor.index.vibrateShort && common_vendor.index.vibrateShort({ type: "light" });
@@ -152,9 +147,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     g: common_vendor.t($options.timeStr.ss),
     h: common_vendor.t($options.formattedSendDate),
     i: !$options.planEnabled ? 1 : "",
-    j: common_vendor.o((...args) => $options.handleRefresh && $options.handleRefresh(...args), "b5"),
-    k: common_vendor.o((...args) => $options.goToClues && $options.goToClues(...args), "ff"),
-    l: common_vendor.o((...args) => $options.goToSend && $options.goToSend(...args), "c1")
+    j: common_vendor.o((...args) => $options.handleRefresh && $options.handleRefresh(...args), "7f"),
+    k: common_vendor.o((...args) => $options.goToClues && $options.goToClues(...args), "fc"),
+    l: common_vendor.o((...args) => $options.goToSend && $options.goToSend(...args), "6b")
   };
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-f29a63c4"]]);

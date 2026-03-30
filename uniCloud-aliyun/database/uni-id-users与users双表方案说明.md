@@ -1,4 +1,4 @@
-# uni-id-users 与 users 双表结合方案说明
+﻿# uni-id-users 与 users 双表结合方案说明
 
 > **现状**：项目已采用**方案 A 单表合并**，业务统一读写 `uni-id-users` 表，已移除 `ensure-user-profile` 及双表逻辑。下文为**方案 B（双表懒加载）**的历史说明，仅供参考。
 
@@ -24,7 +24,7 @@
 
 - **公共模块**：`cloudfunctions/common/ensure-user-profile/`
   - `ensureUserProfile(db, uid)`：确保 `users` 表存在 uid 对应记录；若不存在且 `uni-id-users` 中有，则创建默认记录并返回。
-- **已集成云对象**：user_profile、send_phone、send_email、send_time、send_message、set_enable_sending
+- **已集成云对象**：user_profile、send_plan（兼容期旧的 send_email / send_phone / send_message / send_time / set_enable_sending 仍保留）
 
 ### 使用场景
 

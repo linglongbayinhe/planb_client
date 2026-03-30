@@ -1,4 +1,4 @@
-<template>
+﻿<template>
 	<scroll-view class="home-page" scroll-y>
 		<!-- 顶部状态栏占位 -->
 		<view class="status-bar-placeholder" :style="{ height: statusBarHeight + 'px' }"></view>
@@ -89,6 +89,7 @@
 
 <script>
 	import { store, mutations } from '../store/index.js'
+	import { syncSendPlanToCloud as syncSendPlanPatch } from '../scripts/sendPlanCloud.js'
 
 	export default {
 		name: 'HomeView',
@@ -168,6 +169,13 @@
 			}
 		},
 		methods: {
+			showSendPlanError(err, fallback = '云端同步失败，已保存到本地') {
+				uni.showToast({
+					title: (err && err.errMsg) || fallback,
+					icon: 'none',
+					duration: 2000
+				})
+			},
 			startSyncedCountdown() {
 				if (this.timeoutId) clearTimeout(this.timeoutId)
 				const now = new Date()
@@ -191,32 +199,14 @@
 				const newSendDateISO = newSendDate.toISOString()
 				const newSendDateMs = newSendDate.getTime()
 
-				// 1. 先更新本地 store，保证 UI 立即响应
 				mutations.updateSendPlan({ sendDate: newSendDateISO })
 				this.startSyncedCountdown()
 				uni.vibrateShort && uni.vibrateShort({ type: 'light' })
 
-				// 2. 同步到云数据库 uni-id-users 表的 send_time 字段
-				const uid = store.currentUser && (store.currentUser._id || store.currentUser.uid)
-
-				try {
-					const obj = uniCloud.importObject('send_time')
-					const res = await obj.updateSendTime(newSendDateMs, uid)
-					if (res && res.errCode) {
-						// 静默失败：toast 提示但不回滚本地数据
-						uni.showToast({
-							title: res.errMsg || '云端同步失败，已保存到本地',
-							icon: 'none',
-							duration: 2000
-						})
-					}
-				} catch (e) {
-					uni.showToast({
-						title: (e && e.message) || '云端同步失败，已保存到本地',
-						icon: 'none',
-						duration: 2000
-					})
-				}
+				const res = await syncSendPlanPatch({ sendDate: newSendDateMs }, {
+					onError: (err) => this.showSendPlanError(err)
+				})
+				if (res && res.errCode) return
 			},
 			goToClues() {
 				uni.vibrateShort && uni.vibrateShort({ type: 'light' })
@@ -466,3 +456,4 @@
 		font-weight: 300;
 	}
 </style>
+
