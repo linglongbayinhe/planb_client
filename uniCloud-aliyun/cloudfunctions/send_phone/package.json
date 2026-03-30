@@ -1,9 +1,0 @@
-﻿{
-  "name": "send_phone",
-  "dependencies": {
-    "send-plan": "file:../common/send-plan"
-  },
-  "extensions": {
-    "uni-cloud-jql": {}
-  }
-}

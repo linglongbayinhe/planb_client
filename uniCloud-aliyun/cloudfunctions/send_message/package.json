@@ -1,9 +1,0 @@
-﻿{
-  "name": "send_message",
-  "dependencies": {
-    "send-plan": "file:../common/send-plan"
-  },
-  "extensions": {
-    "uni-cloud-jql": {}
-  }
-}
