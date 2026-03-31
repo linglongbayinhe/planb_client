@@ -1,92 +1,39 @@
-# users 表 Schema 更新说明与依赖检查
+﻿# users.schema.json 说明
 
-> **迁移说明**：项目已采用**方案 A 单表合并**，主表为 `uni-id-users`。`users` 表已迁移，本 schema 仅供备份参考；当前业务读写均为 `uni-id-users` 表，详见 `uni-id-users.schema.json`。
+## 当前状态
 
-## 一、本次修改摘要
+`users.schema.json` 已不再是当前项目的主业务表结构。
 
-### 1. 新增业务字段（基于 uni-id-users 模板）
+当前项目实际使用的是：
 
-| 字段 | 类型 | 说明 | 校验规则 |
-|------|------|------|----------|
-| `send_emails` | array | 发送邮箱列表，最多 3 个 | `maxItems: 3`，元素 `format: "email"` |
-| `send_phones` | array | 发送手机号列表，最多 3 个 | `maxItems: 3`，元素 `pattern: ^\+?[0-9-]{3,20}$`（与 mobile 一致） |
-| `enable_sending` | bool | 是否开启发送计划 | `defaultValue: false` |
-| `send_message` | string | 发送说明/消息 | `maxLength: 500`，`trim: "both"` |
+- 用户主表：`uni-id-users`
+- 任务队列表：`plan_send_tasks`
 
-### 2. 表级权限（permission）
+因此，`users.schema.json` 现在只保留为历史备份参考，不作为当前功能开发、部署或排障的主要依据。
 
-- **read**：`doc._id == auth.uid` — 仅允许读取当前登录用户自己的文档。
-- **update**：`doc._id == auth.uid` — 仅允许更新当前登录用户自己的文档。
-- **create**：`false` — 禁止客户端直接创建用户（注册由云函数/uni-id 完成）。
-- **delete**：`false` — 禁止客户端删除用户文档。
+## 什么时候还会用到
 
-说明：**仅对 JQL / clientDB 生效**；云函数内使用 `db.collection('users').doc(uid).set/update()` 等传统 MongoDB API 不受 schema 权限限制。
+只有在以下情况，才需要回看 `users.schema.json`：
 
-### 3. 敏感字段字段级权限
+- 需要追溯旧版本字段设计
+- 需要对比历史 `users` 表与当前 `uni-id-users` 的差异
+- 需要从旧备份数据恢复部分字段
 
-- **password**：`write: false` — 禁止客户端直接改密码（应由 uni-id 的修改密码接口处理）。
-- **token**：`read: false, write: false` — 禁止客户端读写 token，避免泄露或篡改。
+## 当前不再适用的内容
 
----
+下面这些迁移过程说明，当前都不再作为项目实施依据：
 
-## 二、字段与功能核对结果
+- `users` 作为主业务表的写法
+- 基于 `users` 的权限与 clientDB 设计说明
+- 迁移期间的临时兼容策略
+- 围绕 `users` 表的旧自测步骤
 
-### 内置字段完整性
+## 当前应参考的文件
 
-- 已保留 uni-id-users 常用字段：`_id`、`username`、`password`、`email`、`mobile`、`status`、`role`、`token`、`nickname`、`avatar`、`created_time`、`last_login_time`、各第三方 openid、`identities` 等，类型与模板一致。
-- `required` 仍为空数组，注册/登录由 uni-id 在云函数内校验必填项，无需在 schema 里写死 required。
+- 当前用户主表结构：`uniCloud-aliyun/database/uni-id-users.schema.json`
+- 当前任务表结构：`uniCloud-aliyun/database/plan_send_tasks.schema.json`
+- 当前任务表说明：`uniCloud-aliyun/database/plan_send_tasks-schema-说明.md`
 
-### 数据验证规则
+## 结论
 
-- 新增业务字段校验不会误拦合法数据：
-  - `send_emails`：元素为合法邮箱即可，最多 3 个。
-  - `send_phones`：与 `mobile` 相同 pattern，支持国际格式与短号，最多 3 个。
-  - `send_message`：任意字符串，最长 500 字，前后去空格。
-- 若前端传入空数组 `[]` 或未传字段，schema 不会强制必填，不会导致正常写入失败。
-
-### 权限与安全
-
-- 表级权限保证：客户端通过 JQL/clientDB 只能读写「当前用户」对应文档（`doc._id == auth.uid`）。
-- 云函数（如 `set_enable_sending`、uni-id 登录/注册）使用 MongoDB API，不经过 schema 权限，**登录、注册、token 管理、enable_sending 写入等均不受影响**。
-
----
-
-## 三、依赖该表的用法与结论
-
-| 功能 | 实现方式 | 是否受 schema 影响 | 结论 |
-|------|----------|--------------------|------|
-| 用户登录 | uni-id-co / uni-id-common | 云函数内读写 users，走 MongoDB API | 不受 schema 权限影响，可正常运行 |
-| 用户注册 | uni-id-co 或自建云函数写 users | 同上 | 同上 |
-| Token 管理 | uni-id 在云函数内写 `token` 等 | 同上 | 同上 |
-| 设置 enable_sending | 云函数 `set_enable_sending` 使用 `db.collection('users').doc(uid).set({ enable_sending }, { merge: true })` | 同上 | 可正常写入 |
-| 前端 clientDB 读/写本人资料 | JQL 或 clientDB 查/改当前用户文档 | 受表级 + 字段级 permission 约束 | 仅能读写本人文档；password/token 受字段级限制，业务字段可正常读写 |
-
-说明：项目中 `LoginRegisterSheet.vue` 里的 `getStoredUsers()` / `uni.setStorageSync('users')` 是**本地缓存的用户列表**，与云数据库 `users` 表无直接读写关系；若后续改为从云数据库拉取/同步用户信息，需在「已登录」前提下用 clientDB/JQL 查询当前用户（`doc._id == auth.uid`），此时会受上述表级权限保护，行为符合预期。
-
----
-
-## 四、其他文件是否需调整
-
-- **云函数 `set_enable_sending`**：无需修改，继续使用 `db.collection('users').doc(uid).set({ enable_sending }, { merge: true })` 即可。
-- **云对象 `register`**：已移除（当前仅使用微信授权登录，邮箱注册功能不再需要）。
-- **前端**：若通过 clientDB 读/写用户表（含 `send_emails`、`send_phones`、`enable_sending`、`send_message`），需在请求中携带 uni-id 登录态（token），且只能操作当前用户文档；无需因本次 schema 变更改业务逻辑，除非之前依赖「可读写他人文档」。
-
----
-
-## 五、修复后的 schema 版本
-
-- 已直接更新 `uniCloud-aliyun/database/users.schema.json`。
-- 版本号已从 `1.0.3` 调整为 `1.0.4`。
-
-无需再替换其他文件；如需还原或对比，可用 git 查看 `users.schema.json` 的 diff。
-
----
-
-## 六、建议自测项
-
-1. **登录 / 注册**：使用 uni-id-co 或现有登录方式，确认能正常登录、注册。
-2. **设置 enable_sending**：调用云对象 `set_enable_sending`，在控制台查看 `users` 表该用户文档的 `enable_sending` 是否更新。
-3. **clientDB 读本人**：已登录状态下用 JQL/clientDB 查询当前用户（如 `db.collection('users').doc(uid).get()` 或等价 JQL），确认能读到昵称、业务字段等，且**不包含** `token`、`password` 等敏感字段（若做了 field 过滤或依赖 schema 的 read 限制）。
-4. **clientDB 写本人业务字段**：更新 `send_emails`、`send_phones`、`send_message`、`enable_sending` 等，确认不报权限错误且写入成功。
-
-按上述项通过后，可认为「依赖 users 表的云数据库功能」在 schema 更新后均能正常运行。
+`users.schema.json` 可以继续留在仓库里作为备份，但不应再被视为当前项目的正式数据库结构说明。

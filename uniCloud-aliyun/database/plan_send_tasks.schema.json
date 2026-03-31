@@ -1,0 +1,114 @@
+{
+  "bsonType": "object",
+  "required": [],
+  "properties": {
+    "_id": {
+      "description": "Task id, formatted as uid:channel"
+    },
+    "uid": {
+      "bsonType": "string",
+      "description": "User id",
+      "trim": "both"
+    },
+    "channel": {
+      "bsonType": "string",
+      "description": "Delivery channel",
+      "trim": "both",
+      "enum": [
+        {
+          "text": "email",
+          "value": "email"
+        },
+        {
+          "text": "sms",
+          "value": "sms"
+        }
+      ]
+    },
+    "status": {
+      "bsonType": "string",
+      "description": "Task status",
+      "trim": "both",
+      "enum": [
+        {
+          "text": "pending",
+          "value": "pending"
+        },
+        {
+          "text": "processing",
+          "value": "processing"
+        },
+        {
+          "text": "retry",
+          "value": "retry"
+        },
+        {
+          "text": "success",
+          "value": "success"
+        },
+        {
+          "text": "failed",
+          "value": "failed"
+        }
+      ]
+    },
+    "due_at": {
+      "bsonType": "long",
+      "description": "Original send time in milliseconds"
+    },
+    "next_retry_at": {
+      "bsonType": "long",
+      "description": "Next execution time in milliseconds"
+    },
+    "attempt_count": {
+      "bsonType": "int",
+      "description": "How many attempts have been used",
+      "defaultValue": 0
+    },
+    "max_attempts": {
+      "bsonType": "int",
+      "description": "Maximum retry count",
+      "defaultValue": 3
+    },
+    "recipients": {
+      "bsonType": "array",
+      "description": "Recipient snapshot"
+    },
+    "display_name": {
+      "bsonType": "string",
+      "description": "Snapshot of display name",
+      "trim": "both"
+    },
+    "message": {
+      "bsonType": "string",
+      "description": "Snapshot of message",
+      "trim": "both"
+    },
+    "template_data": {
+      "bsonType": "object",
+      "description": "Snapshot of sms template variables"
+    },
+    "lock_token": {
+      "bsonType": "string",
+      "description": "Worker lock token",
+      "trim": "both"
+    },
+    "lock_expire_at": {
+      "bsonType": "long",
+      "description": "Lock expiry time in milliseconds"
+    },
+    "last_error": {
+      "bsonType": "string",
+      "description": "Last error message",
+      "trim": "both"
+    },
+    "last_sent_at": {
+      "bsonType": "long",
+      "description": "Last success time in milliseconds"
+    },
+    "updated_at": {
+      "bsonType": "long",
+      "description": "Last update time in milliseconds"
+    }
+  }
+}

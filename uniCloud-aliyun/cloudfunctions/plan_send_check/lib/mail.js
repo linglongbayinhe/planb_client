@@ -165,4 +165,4 @@ async function sendTestEmail(transporter, to) {
 	});
 }
 
-module.exports = { createTransporter, sendPlanEmail, sendTestEmail };
+module.exports = { createTransporter, getSmtpConfig, sendPlanEmail, sendTestEmail };

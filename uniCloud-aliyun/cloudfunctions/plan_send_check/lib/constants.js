@@ -1,0 +1,41 @@
+'use strict';
+
+const TASK_COLLECTION = 'plan_send_tasks';
+
+const TASK_CHANNEL_EMAIL = 'email';
+const TASK_CHANNEL_SMS = 'sms';
+
+const TASK_STATUS_PENDING = 'pending';
+const TASK_STATUS_PROCESSING = 'processing';
+const TASK_STATUS_RETRY = 'retry';
+const TASK_STATUS_SUCCESS = 'success';
+const TASK_STATUS_FAILED = 'failed';
+
+const TASK_FETCH_LIMIT = 100;
+const EMAIL_TASK_CONCURRENCY = Math.max(
+	1,
+	Number.parseInt(process.env.EMAIL_TASK_CONCURRENCY || '2', 10) || 2
+);
+const SMS_TASK_CONCURRENCY = Math.max(
+	1,
+	Number.parseInt(process.env.SMS_TASK_CONCURRENCY || '3', 10) || 3
+);
+
+const RETRY_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const LOCK_TIMEOUT_MS = 12 * 60 * 1000;
+
+module.exports = {
+	TASK_COLLECTION,
+	TASK_CHANNEL_EMAIL,
+	TASK_CHANNEL_SMS,
+	TASK_STATUS_PENDING,
+	TASK_STATUS_PROCESSING,
+	TASK_STATUS_RETRY,
+	TASK_STATUS_SUCCESS,
+	TASK_STATUS_FAILED,
+	TASK_FETCH_LIMIT,
+	EMAIL_TASK_CONCURRENCY,
+	SMS_TASK_CONCURRENCY,
+	RETRY_INTERVAL_MS,
+	LOCK_TIMEOUT_MS
+};

@@ -9,6 +9,20 @@ const MAX_TIME_SKEW_MS = 60 * 1000
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^1[3-9]\d{9}$/
 
+const TASK_COLLECTION = 'plan_send_tasks'
+const TASK_CHANNEL_EMAIL = 'email'
+const TASK_CHANNEL_SMS = 'sms'
+const TASK_STATUS_PENDING = 'pending'
+const DEFAULT_MAX_ATTEMPTS = 3
+const TASK_RELATED_FIELDS = new Set([
+  'send_emails',
+  'send_phones',
+  'send_display_name',
+  'send_message',
+  'enable_sending',
+  'send_time'
+])
+
 function makeError(errCode, errMsg) {
   return { errCode, errMsg }
 }
@@ -115,6 +129,82 @@ function normalizeSendDate(value) {
   return { value: Math.floor(value) }
 }
 
+function pickTaskRelatedFields(updateData) {
+  return Object.keys(updateData || {}).filter(key => TASK_RELATED_FIELDS.has(key))
+}
+
+function makeTaskId(uid, channel) {
+  return `${uid}:${channel}`
+}
+
+function getTaskCollection(db) {
+  return db.collection(TASK_COLLECTION)
+}
+
+function getDocFromRes(res) {
+  return (res && res.data && res.data[0]) || null
+}
+
+function normalizeTaskEmailRecipients(list) {
+  return normalizeExistingEmailList(list)
+}
+
+function normalizeTaskPhoneRecipients(list) {
+  return normalizeExistingPhoneList(list)
+}
+
+function isActiveProcessingTask(task, now) {
+  if (!task || task.status !== 'processing') return false
+  return Number(task.lock_expire_at || 0) > now
+}
+
+function buildTaskDoc(user, channel, now) {
+  if (!user || !user._id) return null
+  if (user.enable_sending !== true) return null
+
+  const dueAt = Number(user.send_time || 0)
+  if (!isFinite(dueAt) || dueAt <= 0) return null
+
+  const displayName = trimString(user.send_display_name || '')
+  const message = trimString(user.send_message || '')
+  if (!displayName || !message) return null
+
+  const recipients = channel === TASK_CHANNEL_EMAIL
+    ? normalizeTaskEmailRecipients(user.send_emails)
+    : normalizeTaskPhoneRecipients(user.send_phones)
+
+  if (recipients.length === 0) return null
+
+  return {
+    _id: makeTaskId(user._id, channel),
+    uid: user._id,
+    channel,
+    status: TASK_STATUS_PENDING,
+    due_at: dueAt,
+    next_retry_at: dueAt,
+    attempt_count: 0,
+    max_attempts: DEFAULT_MAX_ATTEMPTS,
+    recipients,
+    display_name: displayName,
+    message,
+    template_data: {
+      send_display_name: displayName,
+      send_message: message
+    },
+    lock_token: '',
+    lock_expire_at: 0,
+    last_error: '',
+    last_sent_at: 0,
+    updated_at: now
+  }
+}
+
+function stripTaskId(taskDoc) {
+  const copy = Object.assign({}, taskDoc)
+  delete copy._id
+  return copy
+}
+
 function createSendPlanService(ctx) {
   let uniId = null
   try {
@@ -155,6 +245,65 @@ function createSendPlanService(ctx) {
     return user
   }
 
+  async function loadTask(taskId) {
+    const db = getDb()
+    return getDocFromRes(await getTaskCollection(db).doc(taskId).get())
+  }
+
+  async function saveTaskDoc(taskDoc, now) {
+    const db = getDb()
+    const tasks = getTaskCollection(db)
+    const existing = await loadTask(taskDoc._id)
+    if (isActiveProcessingTask(existing, now)) {
+      return { skipped: true, reason: 'TASK_PROCESSING' }
+    }
+
+    if (existing) {
+      await tasks.doc(taskDoc._id).update(stripTaskId(taskDoc))
+    } else {
+      await tasks.add(taskDoc)
+    }
+
+    return { success: true }
+  }
+
+  async function removeTaskDoc(taskId, now) {
+    const db = getDb()
+    const task = await loadTask(taskId)
+    if (!task) {
+      return { success: true, removed: false }
+    }
+    if (isActiveProcessingTask(task, now)) {
+      return { skipped: true, reason: 'TASK_PROCESSING' }
+    }
+
+    await getTaskCollection(db).doc(taskId).remove()
+    return { success: true, removed: true }
+  }
+
+  async function syncPlanTasks(uid) {
+    const now = Date.now()
+    const user = await loadUser(uid)
+    if (!user) {
+      throw new Error('USER_NOT_FOUND')
+    }
+
+    const emailTask = buildTaskDoc(user, TASK_CHANNEL_EMAIL, now)
+    const smsTask = buildTaskDoc(user, TASK_CHANNEL_SMS, now)
+
+    if (emailTask) {
+      await saveTaskDoc(emailTask, now)
+    } else {
+      await removeTaskDoc(makeTaskId(uid, TASK_CHANNEL_EMAIL), now)
+    }
+
+    if (smsTask) {
+      await saveTaskDoc(smsTask, now)
+    } else {
+      await removeTaskDoc(makeTaskId(uid, TASK_CHANNEL_SMS), now)
+    }
+  }
+
   async function updateUser(uid, updateData) {
     const user = await loadUser(uid)
     if (!user) {
@@ -168,6 +317,9 @@ function createSendPlanService(ctx) {
 
     const db = getDb()
     await db.collection('uni-id-users').doc(uid).update(updateData)
+    if (pickTaskRelatedFields(updateData).length > 0) {
+      await syncPlanTasks(uid)
+    }
     return { success: true }
   }
 

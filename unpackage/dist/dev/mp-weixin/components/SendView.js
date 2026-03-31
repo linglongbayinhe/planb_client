@@ -242,12 +242,13 @@ const _sfc_main = {
           name: "plan_send_check"
         });
         const result = res && res.result || {};
+        common_vendor.index.__f__("log", "at components/SendView.vue:451", "[SendView][run] plan_send_check result:", result);
         if (result.errCode) {
           throw new Error(result.errMsg || result.message || "执行失败，请稍后重试");
         }
         const processed = Number(result.processed || 0);
-        const emailCount = Number(result.email && result.email.count || 0);
-        const smsCount = Number(result.sms && result.sms.count || 0);
+        const emailCount = Number(result.email && result.email.total || 0);
+        const smsCount = Number(result.sms && result.sms.total || 0);
         common_vendor.index.showToast({
           title: `处理${processed} 邮${emailCount} 短${smsCount}`,
           icon: "none",
@@ -277,12 +278,13 @@ const _sfc_main = {
           data: { dryRun: true }
         });
         const result = res && res.result || {};
+        common_vendor.index.__f__("log", "at components/SendView.vue:485", "[SendView][dryRun] plan_send_check result:", result);
         if (result.errCode) {
           throw new Error(result.errMsg || result.message || "执行失败，请稍后重试");
         }
-        const total = Number(result.totalCandidates || 0);
-        const emailCount = Number(result.email && result.email.count || 0);
-        const smsCount = Number(result.sms && result.sms.count || 0);
+        const total = Number(result.totalTasks || 0);
+        const emailCount = Number(result.channel && result.channel.email || 0);
+        const smsCount = Number(result.channel && result.channel.sms || 0);
         common_vendor.index.showToast({
           title: `模拟 候选${total} 邮${emailCount} 短${smsCount}`,
           icon: "none",

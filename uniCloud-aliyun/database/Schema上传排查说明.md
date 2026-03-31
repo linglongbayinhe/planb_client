@@ -1,84 +1,122 @@
-# users.schema.json 上传失败（返回 undefined）排查说明
+﻿# Schema 上传排查说明
 
-## 一、已修复的问题
+## 适用范围
 
-### inviter_uid 字段：trim 仅对 string 有效
+本文用于排查 `uniCloud-aliyun/database/` 目录下数据库 schema 或索引上传失败的问题，适用于当前项目仍在使用的文件，例如：
 
-- **原因**：官方文档明确说明 `trim` 仅当 `bsonType="string"` 时有效。  
-- **原状**：`inviter_uid` 的 `bsonType` 为 `array`，却配置了 `"trim": "both"`，属于非法组合，阿里云服务端校验可能因此失败并只返回 undefined。  
-- **修改**：已从 `inviter_uid` 上移除 `trim`，只保留 `bsonType` 与 `description`。
+- `uni-id-users.schema.json`
+- `plan_send_tasks.schema.json`
+- `users.schema.json`（仅备份参考）
+- `users.index.json`
+- `plan_send_tasks.index.json`
 
-请先**保存文件后再次上传** users.schema.json（右键 schema 文件 → 上传 DB Schema，或 Ctrl+u）。
+## 当前项目现状
 
----
+- 当前业务主表为 `uni-id-users`
+- 发送任务队列表为 `plan_send_tasks`
+- `users.schema.json` 仅作为历史备份参考，不再作为当前业务主表
 
-## 二、若仍失败，可逐项排查
+## 上传前检查
 
-### 1. 本地校验 JSON 格式
+1. 确认文件已保存为 UTF-8 编码，内容不是乱码。
+2. 确认当前 HBuilderX 连接的是正确的阿里云服务空间。
+3. 确认上传的是 `schema.json` 或 `index.json` 本身，而不是说明文档。
+4. 确认 JSON 语法合法，没有多余逗号、注释或非法引号。
 
-在项目根目录执行（PowerShell 或 命令提示符）：
+## 本地快速校验
+
+在项目根目录执行：
 
 ```bash
-node -e "try { JSON.parse(require('fs').readFileSync('uniCloud-aliyun/database/users.schema.json','utf8')); console.log('JSON 合法'); } catch(e) { console.log('错误:', e.message); }"
+node -e "try { JSON.parse(require('fs').readFileSync('uniCloud-aliyun/database/plan_send_tasks.schema.json','utf8')); console.log('JSON 合法'); } catch(e) { console.log('错误:', e.message); }"
 ```
 
-输出为「JSON 合法」即语法无误。若报错，按提示修正（常见：多余逗号、注释、非 UTF-8 编码或 BOM）。
+如果要检查其他 schema，把文件名替换掉即可。
 
-### 2. 分段上传测试（缩小范围）
+## 常见失败原因
 
-若整表上传仍返回 undefined，可先做「最小可上传版本」测试：
+### 1. JSON 格式错误
 
-1. **备份**当前 `users.schema.json`。  
-2. **新建**一个临时 schema（如 `users_mini.schema.json`），内容仅保留：
+常见表现：
 
-```json
-{
-	"bsonType": "object",
-	"required": [],
-	"properties": {
-		"_id": { "description": "ID" },
-		"email": { "bsonType": "string", "title": "邮箱" }
-	},
-	"version": "0.0.1"
-}
-```
+- 上传直接失败
+- 控制台只显示 `undefined`
+- HBuilderX 没给出明确字段错误
 
-3. 上传该临时 schema：  
-   - 若**能成功**，说明当前环境、网络、权限正常，问题在完整 schema 的某一类配置；  
-   - 若**仍失败**，则更可能是环境/网络/控制台权限或 HBuilderX 版本问题。
+处理方式：
 
-### 3. 可能触发服务端异常的配置（若修复 trim 后仍失败可尝试）
+- 先做本地 `JSON.parse`
+- 再检查是否含注释、尾逗号、半角/全角引号混用
 
-- **foreignKey / enum 引用其他表**  
-  当前 schema 中有：  
-  `d_ids` → opendb-department、`role` → uni-id-roles、`dcloud_appid` → opendb-app-list。  
-  若云空间里**没有**这些集合，部分环境下上传可能失败。可**临时**去掉这些字段的 `foreignKey`、`enum`（或整段字段）再上传，确认是否与「引用不存在表」有关。
+### 2. 字段类型与配置不匹配
 
-- **表级 permission 表达式**  
-  表级使用了 `"read": "doc._id == auth.uid"` 等表达式。理论上符合文档，若怀疑兼容性，可暂时改为 `"read": false` 测试上传是否通过。
+例如：
 
-- **bsonType: "password"**  
-  文档中 password 为合法类型；若仅改上述仍失败，可临时将 `password` 改为 `"bsonType": "string"` 测试（仅作排查，不建议长期使用）。
+- `trim` 只适用于 `bsonType: "string"`
+- `defaultValue` 的类型要与字段类型一致
+- `enum` 的值要与字段实际类型一致
 
-### 4. 查看更详细错误信息
+### 3. 引用未准备好
 
-- **HBuilderX**：菜单「帮助」→「查看运行日志」或「开发者工具」，看是否有与 uniCloud / 阿里云相关的报错。  
-- **uniCloud 控制台**：登录 [unicloud.dcloud.net.cn](https://unicloud.dcloud.net.cn) → 选择阿里云服务空间 → 云数据库 → 对应表 → 「表结构」：若之前有部分写入，可对比与本地 schema 的差异。  
-- **网络**：上传约 20 秒后失败，可能是请求超时；可换网络或稍后再试。
+如果 schema 中使用了 `foreignKey`、依赖其他集合或扩展库，但云空间中对应资源尚未准备好，可能导致上传失败。
 
-### 5. 上传方式再确认
+当前项目里：
 
-- 右键 `users.schema.json` → **上传 DB Schema**（或选中后 **Ctrl+u**）。  
-- 确认顶部选中的是**当前使用的阿里云服务空间**（如 yy-planb），避免传到错误空间。
+- `plan_send_tasks.schema.json` 没有外键依赖，上传风险较低
+- `uni-id-users.schema.json` 如果后续继续调整，要特别注意字段类型和扩展表依赖
 
----
+### 4. 上传错服务空间
 
-## 三、修改小结
+同一个项目如果绑定了多个服务空间，最容易出现“本地改对了，但云端没变化”的情况。
 
-| 项目           | 说明 |
-|----------------|------|
-| 已修改         | 删除 `inviter_uid` 的 `"trim": "both"`（array 类型不支持 trim） |
-| JSON 语法      | 已用 Node 校验，当前文件合法 |
-| 建议下一步     | 保存后重新上传；若仍失败，按第二节逐项缩小范围并查看日志 |
+处理方式：
 
-按上述修改并重新上传后，若仍出现「undefined」或新报错，可把**完整报错信息或截图**和**当前 users.schema.json 内容**贴出，便于继续排查。
+- 上传前先确认 HBuilderX 左下角/顶部当前选中的服务空间
+- 上传后到 DCloud 控制台检查对应云空间的表结构是否变化
+
+## 推荐上传顺序
+
+如果本次改动同时包含 schema、索引、云函数：
+
+1. 先上传数据库 schema
+2. 再上传数据库 index
+3. 最后上传依赖这些表结构的云函数/云对象
+
+对于当前任务队列方案，推荐顺序是：
+
+1. `plan_send_tasks.schema.json`
+2. `plan_send_tasks.index.json`
+3. `send_plan`
+4. `plan_send_check`
+
+## 当前项目的重点检查项
+
+### `plan_send_tasks`
+
+上传后确认：
+
+- 集合 `plan_send_tasks` 已创建
+- 索引 `status_next_retry_at` 已存在
+- 索引字段顺序为 `status -> next_retry_at`
+
+### `uni-id-users`
+
+上传后确认：
+
+- 表结构仍能正常读取
+- 不影响现有登录、用户资料、发送计划等功能
+
+## 上传后建议验证
+
+1. 到 DCloud 控制台确认集合和索引已生效。
+2. 手动运行一次 `plan_send_check` 的 `dryRun`。
+3. 查看返回结果和日志，确认没有 schema 不匹配导致的运行时报错。
+
+## 结论
+
+如果 schema 上传失败，优先按下面顺序排查：
+
+1. JSON 语法
+2. 字段类型与配置是否匹配
+3. 当前服务空间是否正确
+4. 依赖集合/索引是否先于云函数部署

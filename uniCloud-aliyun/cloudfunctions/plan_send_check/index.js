@@ -12,7 +12,7 @@
 
 const { createTransporter, sendTestEmail } = require('./lib/mail');
 const { sendTestSms } = require('./lib/sms');
-const { runFullFlow, runDryRun } = require('./lib/run');
+const { runFullFlow, runDryRun } = require('./lib/run-tasks');
 
 exports.main = async (event, context) => {
 	const db = uniCloud.database();
